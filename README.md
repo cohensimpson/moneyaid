@@ -51,7 +51,7 @@ Finally, when re-running my analyses, some numerical results may differ slightly
 3) Owing to the large size of the analysed dataset (680,378 records), I regularly faced memory issues/stuttering/sometimes fatal crashes when estimating the Bayesian multilevel models and when sampling from the posterior predictive distribution (e.g., for posterior predictive checks and leave-one-out cross-validation). To help with this, [I increased the available swap memory for R/RStudio](https://stackoverflow.com/a/52612921). And I judiciously managed the amount of working memory occupied by R objects by keeping only what is necessary in the R environment and using the garbage collector function [gc()](https://stackoverflow.com/a/8813862). Please keep this in mind when replicating my work. Also, to help gauge whether you might run into memory issues, do note that I carried out my research using the Apple M1 Max Macbook Pro which has 10 CPU cores and 32GB of Ram.
 
 
-## R Packages Used in Analysis (* = Packaged Loaded Explicitly)
+## R Packages Used for Analyses (* = Packaged Loaded Explicitly)
 
 package          version date       source  <br>
 abind            1.4-5   2016-07-21 CRAN (R 4.1.0) <br>
