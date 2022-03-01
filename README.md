@@ -1,4 +1,4 @@
-# The Relational Bases of Informal Finance (Simpson, In Prep.)
+# The Relational Bases of Informal Finance <br> (Simpson, In Prep.)
 
 
 ## Abstract
