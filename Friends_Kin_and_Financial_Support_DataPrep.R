@@ -1,4 +1,4 @@
-################################# The Relational Bases of Informal Finance
+################################# The Relational Bases of Informal Financial Cooperation
 ################################# Replication Code: Data Preparation
 
 
@@ -16,7 +16,8 @@ library(brms)
 
 library(ggplot2)
 library(jtools)
-# library(broom.mixed)
+library(broom)
+library(broom.mixed)
 
 library(bayesplot)
 library(cowplot) # Used to create ggplots w/ insets
@@ -29,6 +30,9 @@ set.seed(20200127)
 options(scipen = 8)
 options(digits = 5)
 options(max.print = 5000000)
+
+
+# writeLines(capture.output(devtools::session_info()), "sessionInfo_Friends_Kin_and_Financial_Support.txt")
 
 
 
@@ -44,13 +48,17 @@ survey_responses$village_ID <- survey_responses$villageId
 survey_responses$village_ID <- as.character(survey_responses$village_ID) ## Convert village IDs to character strings 
 survey_responses$villageId <- NULL
 
+
 village_IDs <- unique(survey_responses$village_ID) ## 16 villages with network data
+
 
 survey_responses$gender <- survey_responses$female ## Rename "female" as "gender"
 
-survey_responses <- survey_responses[c("village_ID", "ID", "gender", "age", "income", "hasPhone", "leader")] ## Retain only the actor attributes that we need
 
+survey_responses <- survey_responses[c("village_ID", "ID", "gender", "age", "income", "hasPhone", "leader")] ## Retain only the actor attributes that we need
 rownames(survey_responses) <- survey_responses$ID
+
+
 
 
 #### Supplementary Attribute Data from: Ferrali, R., Grossman, G., Platas, M. R., & Rodden, J. (2021). Who Registers? Village Networks, Household Dynamics, and Voter Registration in Rural Uganda. Comparative Political Studies, 001041402110360. https://doi.org/10.1177/00104140211036048
@@ -63,8 +71,8 @@ survey_responses_CPS$village_ID <- survey_responses_CPS$villageId
 survey_responses_CPS$village_ID <- as.character(survey_responses_CPS$village_ID) 
 survey_responses_CPS$villageId <- NULL
 
-survey_responses_CPS <- survey_responses_CPS[c("village_ID", "villageTxt", "ID", "hh", "edu_full", "head", "rlg", "eth")] 
 
+survey_responses_CPS <- survey_responses_CPS[c("village_ID", "villageTxt", "ID", "hh", "edu_full", "head", "rlg", "eth")] 
 rownames(survey_responses_CPS) <- survey_responses_CPS$ID
 
 
@@ -76,9 +84,11 @@ survey_responses$HH_Head <- survey_responses_CPS$head[match(survey_responses$ID,
 survey_responses$religion <- survey_responses_CPS$rlg[match(survey_responses$ID, survey_responses_CPS$ID)] 
 survey_responses$ethnicity <- survey_responses_CPS$eth[match(survey_responses$ID, survey_responses_CPS$ID)] 
 
-survey_responses$HH_ID <- as.character(survey_responses$HH_ID)
 
+survey_responses$HH_ID <- as.character(survey_responses$HH_ID)
 survey_responses <- survey_responses[c("village_ID", "villageTxt", "ID", "HH_ID", "gender", "age", "edu_full", "income", "hasPhone", "leader", "HH_Head", "religion", "ethnicity")]
+
+
 
 
 #################################### DESCRIPTION OF VILLAGER ATTRIBUTE DATA USED IN MODELS ####################################
@@ -91,6 +101,7 @@ survey_responses <- survey_responses[c("village_ID", "villageTxt", "ID", "HH_ID"
 # HH_Head: 1 = the head of the household;  0 for all other household members
 # religion: 1 = Catholic (dominant local religion); 0 = Other religion
 # ethnicity: 1 = Lugbara (dominant local ethnicity); 0 = Other ethnic group
+
 
 
 
@@ -110,6 +121,7 @@ survey_responses$income <- as.numeric(survey_responses$income)
 
 
 
+
 #################################### LOAD NETWORK DATA ####################################
 nominations <- import("ties.csv") ## Load all nomination data
 nominations$village_ID <- nominations$villageId
@@ -125,11 +137,13 @@ networks.of.study <- sort(unique( nominations$type )) ## The names of networks m
 
 
 
+
 #################################### IMPUTE ATTRIBUTE AND INCORPORATE DATA ####################################
 # D. Hoff, P. (2007). Extending the Rank Likelihood for Semiparametric Copula Estimation. The Annals of Applied Statistics, 1(1). https://doi.org/10.1214/07-AOAS107
 # Hollenbach, F. M., Bojinov, I., Minhas, S., Metternich, N. W., Ward, M. D., & Volfovsky, A. (2021). Multiple Imputation Using Gaussian Copulas. Sociological Methods & Research, 50(3), 1259–1283. https://doi.org/10.1177/0049124118799381
 # https://cran.r-project.org/web/packages/sbgcop/
 # https://cran.r-project.org/web/packages/VIM/index.html
+
 print(aggr(survey_responses, plot = FALSE))
 aggr(survey_responses, plot = TRUE, labels = TRUE)
 
@@ -139,6 +153,8 @@ survey_responses.imputation$village_ID <- NULL ## Retain only binary, ordinal, a
 survey_responses.imputation$villageTxt <- NULL 
 survey_responses.imputation$HH_ID <- NULL 
 survey_responses.imputation$ID <- NULL 
+
+
 
 cat("\nStart Imputation of Missing Values Using sbgcop.mcmc:\n")
 survey_responses.imputation <- sbgcop.mcmc(Y = survey_responses.imputation, 
@@ -151,6 +167,8 @@ print(summary(survey_responses.imputation))
 plot.psgc(survey_responses.imputation)
 par(mfrow = c(1, 1))
 
+
+
 ## Extract the imputed values which are the posterior mean values obtained using sbgcop.mcmc
 gender.imputed.values <- survey_responses.imputation$Y.pmean[is.na(survey_responses$gender), "gender"] # 154 Missing
 edu_full.imputed.values <- survey_responses.imputation$Y.pmean[is.na(survey_responses$edu_full), "edu_full"] # 4 Missing
@@ -160,7 +178,7 @@ HH_Head.imputed.values <- survey_responses.imputation$Y.pmean[is.na(survey_respo
 
 
 survey_responses[names(gender.imputed.values), "gender"] <- ifelse(gender.imputed.values > 0.95, 1, 0)
-survey_responses[names(edu_full.imputed.values), "edu_full"] <- edu_full.imputed.values
+survey_responses[names(edu_full.imputed.values), "edu_full"] <- round(edu_full.imputed.values)
 survey_responses[names(income.imputed.values), "income"] <- income.imputed.values
 survey_responses[names(hasPhone.imputed.values), "hasPhone"] <- ifelse(hasPhone.imputed.values > 0.95, 1, 0)
 survey_responses[names(HH_Head.imputed.values), "HH_Head"] <- ifelse(HH_Head.imputed.values > 0.95, 1, 0)
@@ -180,6 +198,7 @@ survey_responses$ethnicity <- ifelse(survey_responses$ethnicity == 1, "Lugbara",
 
 
 
+
 #################################### LOAD VILLAGE-LEVEL DATA ####################################
 #### Variables with the "census_" prefix come from the 2014 Uganda National Population and Housing Census
 villages <- import("villages.csv") 
@@ -194,6 +213,7 @@ villages <- villages[c("village_ID", "census_pop", "census_employ", "census_noAg
 
 
 
+
 #################################### BUILD NETWORKS ####################################
 village_networks_lending <- list()
 village_networks_friendship <- list()
@@ -204,7 +224,6 @@ village_networks_solver <- list()
 
 village_networks_kinship_assymetric <- list() # Untransformed kinship nominations
 village_networks_coresidence <- list()
-
 
 
 for(v in village_IDs){  ## For each village with network data, construct the network of interest
@@ -280,6 +299,18 @@ for(v in village_IDs){  ## For each village with network data, construct the net
   ## CONSTRUCT "CLOSE" KINSHIP MATRIX (ASSYMETRIC!) ##
   # “Think about up to five family members in this village not living in your household with whom you most frequently spend time. 
   # For instance, you might visit one another, eat meals together, or attend events together.”
+  
+  # Note that not all of the ties in each network constructed with the household membership data — i.e., the "coresidence" networks create above which include all possible asymmetric ties between people who live together — appear in the “family” nominations in “ties.csv”. 
+  # As detailed in personal communication (i.e, emails) with Romain Ferrali (25 February 2022), the gentleman who collected the Ugandan data, there are three sources of information for kinship.
+  # There is the baseline household membership data that Romain and his colleagues gathered prior to their full survey and cleaned ex-post.
+  # There is the household membership data that Romain and his colleagues collected during the survey.
+  # And, finally, there is the data on non-coresident kin elicited using the sociometric question for family/kinship (above).
+  # According to Romain, the discrepancy between coresidents and the “family” nominations in “ties.csv” is likely due to his team failing to
+  # properly clean that origina/baseline household membership data by updating these data through the addition of all new household members discovered during their survey but who did not appear in the baseline household membership data.
+  
+  # Note that the “family” nominations in “ties.csv” already includes the connections with the household members uncovered by Romain and his colleagues during the survey. 
+  # Accordingly, for my analysis for each village, I simply add the symmetric networks constructed with the “family” nominations in “ties.csv” to a symmetric network 
+  # constructed using the origina/baseline household membership data — i.e., coresidence networks that only include all possible asymmetric ties between people who live together according to "nodes_CPS_Version_1.2.csv". 
   kinship.matrix <- matrix(data = 0, nrow = length(villagers), ncol = length(villagers))
   rownames(kinship.matrix) <- villagers
   colnames(kinship.matrix) <- villagers
@@ -298,7 +329,7 @@ for(v in village_IDs){  ## For each village with network data, construct the net
   
   
   ## Intersection of coresidence and unilateral nominations of kinship
-  print(table(kinship.matrix, coresidence)) 
+  # print(table(kinship.matrix, coresidence)) 
   
   
   ## Create a binary network indicating a familial link when this link is acknowledge by either party involved
@@ -495,8 +526,7 @@ for(v in village_IDs){ ## For each village with network data, construct the frie
   all_villager_pairs$leader_i <- villagers_data$leader[match(all_villager_pairs$i_ID, villagers_data$ID)] 
   all_villager_pairs$HH_Head_i <- villagers_data$HH_Head[match(all_villager_pairs$i_ID, villagers_data$ID)] 
   all_villager_pairs$religion_i <- villagers_data$religion[match(all_villager_pairs$i_ID, villagers_data$ID)]
-  all_villager_pairs$ethnicity_i <- villagers_data$ethnicity[match(all_villager_pairs$i_ID, villagers_data$ID)] 
-  
+
   all_villager_pairs$gender_j <- villagers_data$gender[match(all_villager_pairs$j_ID, villagers_data$ID)] 
   all_villager_pairs$age_j <- villagers_data$age[match(all_villager_pairs$j_ID, villagers_data$ID)]
   all_villager_pairs$edu_full_j <- villagers_data$edu_full[match(all_villager_pairs$j_ID, villagers_data$ID)]
@@ -505,8 +535,7 @@ for(v in village_IDs){ ## For each village with network data, construct the frie
   all_villager_pairs$leader_j <- villagers_data$leader[match(all_villager_pairs$j_ID, villagers_data$ID)]
   all_villager_pairs$HH_Head_j <- villagers_data$HH_Head[match(all_villager_pairs$j_ID, villagers_data$ID)] 
   all_villager_pairs$religion_j <- villagers_data$religion[match(all_villager_pairs$j_ID, villagers_data$ID)] 
-  all_villager_pairs$ethnicity_j <- villagers_data$ethnicity[match(all_villager_pairs$j_ID, villagers_data$ID)]
-  
+
   village_dyads[[v]] <- all_villager_pairs
   
 }
@@ -592,10 +621,6 @@ all_village_dyads$HH_Head_i <- relevel(all_village_dyads$HH_Head_i, ref = "No")
 all_village_dyads$religion_i <- as.factor(all_village_dyads$religion_i)
 all_village_dyads$religion_i <- relevel(all_village_dyads$religion_i, ref = "Catholic")
 
-all_village_dyads$ethnicity_i <- as.factor(all_village_dyads$ethnicity_i)
-all_village_dyads$ethnicity_i <- relevel(all_village_dyads$ethnicity_i, ref = "Lugbara")
-
-
 all_village_dyads$age_i_Z <- scale(all_village_dyads$age_i, center = TRUE, scale = TRUE)
 
 all_village_dyads$age_i_squared <- all_village_dyads$age_i^2 # https://stats.stackexchange.com/questions/264146/standardizing-quadratic-variables-in-linear-model
@@ -618,10 +643,6 @@ all_village_dyads$HH_Head_j <- relevel(all_village_dyads$HH_Head_j, ref = "No")
 
 all_village_dyads$religion_j <- as.factor(all_village_dyads$religion_j)
 all_village_dyads$religion_j <- relevel(all_village_dyads$religion_j, ref = "Catholic")
-
-all_village_dyads$ethnicity_j <- as.factor(all_village_dyads$ethnicity_j)
-all_village_dyads$ethnicity_j <- relevel(all_village_dyads$ethnicity_j, ref = "Lugbara")
-
 
 all_village_dyads$age_j_Z <- scale(all_village_dyads$age_j, center = TRUE, scale = TRUE)
 
@@ -674,13 +695,12 @@ all_village_dyads$village <- relevel(all_village_dyads$village, ref = "29")
 ## Monadic Villager Covariates
 summary(all_village_dyads$age_i) ## Years of age
 summary(all_village_dyads$edu_full_i) ## Education level
-summary(all_village_dyads$income_i) ## Perceived realtive income
+summary(all_village_dyads$income_i) ## Perceived relative income
 
 table(all_village_dyads$gender_i) ## Gender
 table(all_village_dyads$hasPhone_i) ## Owner of Mobile Phone
 table(all_village_dyads$HH_Head_i) ## Household Head
 table(all_village_dyads$religion_i) ## Catholic (i.e., the dominant religion)
-table(all_village_dyads$ethnicity_i) ## Lugbara (i.e., the dominant ethnicity)
 table(all_village_dyads$leader_i) ## Formal village leader
 
 

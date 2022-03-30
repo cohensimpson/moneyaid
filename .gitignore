@@ -2,4 +2,7 @@
 *.rds
 *.RData
 *.docx
+*.png
+!F1_Friends_Kin_FinancialSupport_Inset.png
+!F2_Friends_Kin_FinancialSupport.png
 .DS_Store
