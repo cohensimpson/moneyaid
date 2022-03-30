@@ -306,11 +306,11 @@ for(v in village_IDs){  ## For each village with network data, construct the net
   # There is the household membership data that Romain and his colleagues collected during the survey.
   # And, finally, there is the data on non-coresident kin elicited using the sociometric question for family/kinship (above).
   # According to Romain, the discrepancy between coresidents and the “family” nominations in “ties.csv” is likely due to his team failing to
-  # properly clean that origina/baseline household membership data by updating these data through the addition of all new household members discovered during their survey but who did not appear in the baseline household membership data.
+  # properly clean the original/baseline household membership data by updating these data through the addition of all new household members discovered during their survey but who did not appear in the baseline household membership data.
   
   # Note that the “family” nominations in “ties.csv” already includes the connections with the household members uncovered by Romain and his colleagues during the survey. 
   # Accordingly, for my analysis for each village, I simply add the symmetric networks constructed with the “family” nominations in “ties.csv” to a symmetric network 
-  # constructed using the origina/baseline household membership data — i.e., coresidence networks that only include all possible asymmetric ties between people who live together according to "nodes_CPS_Version_1.2.csv". 
+  # constructed using the original/baseline household membership data — i.e., coresidence networks that only include all possible asymmetric ties between people who live together according to "nodes_CPS_Version_1.2.csv". 
   kinship.matrix <- matrix(data = 0, nrow = length(villagers), ncol = length(villagers))
   rownames(kinship.matrix) <- villagers
   colnames(kinship.matrix) <- villagers
