@@ -164,6 +164,7 @@ survey_responses.imputation <- sbgcop.mcmc(Y = survey_responses.imputation,
                                            verb = TRUE
 )
 print(summary(survey_responses.imputation))
+range(summary(survey_responses.imputation)$ESS) ## Range of Effective Sample Size across pairwise correlations
 plot.psgc(survey_responses.imputation)
 par(mfrow = c(1, 1))
 
