@@ -22,7 +22,7 @@ library(broom.mixed)
 library(bayesplot)
 library(cowplot) # Used to create ggplots w/ insets
 
-library(VIM) # Used to visualise missing data
+library(VIM) # Used to visualize missing data
 library(sbgcop) # Used for the Bayesian copula imputation
 
 
@@ -63,32 +63,79 @@ cmdstanr.threads <- 5
 brms.iter <- 5000 ## How many iterations per chain?
 brms.warmup <- 1000 ## How many warm-up iterations per chain?
 
-# cmdstanr.grainsize <- nrow(all_village_dyads)/120  # Default: max(100, nrow(all_village_dyads) / (2 * cmdstanr.threads))
-
+cmdstanr.grainsize <- nrow(all_village_dyads)/120  # Default: max(100, nrow(all_village_dyads) / (2 * cmdstanr.threads))
 
 
 
 #################################### ESTIMATE BAYESIAN MODELS ####################################
 ########## A NOTE ON WARNINGS AT THE BEGGINING OF SAMPLING
-# At the very beginning of estimation, brms/Stan/cmdstanr sometimes produces the following rather intimidating warning:
+# At the very beginning of estimation, brms/Stan/cmdstanr would sometimes produces the following rather intimidating warning:
       # Chain XX Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
       # Chain XX Exception: Exception: bernoulli_logit_glm_lpmf: Intercept[1] is inf, but must be finite! 
       # Chain XX If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
       # Chain XX but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
 
-# This warning is not concerning if it only occurs rarely and only during the warmup phase. This is discussed in  
-# threads on the official Stan help forum, sometimes with direct input by the Stan developers themselves. 
-# See in particular these threads:
+# As mentioned in my paper, this warning appears to stem from inclusion of the parameter for the standard deviation of the random/varying intercepts for the 16 villages.
+# Crucially, this warning is not concerning if it only occurs during the warmup phase and the diagnostics after estimation are good (i.e., there are no pathologies as indicated by 
+# full convergence, low autocorrelation etc.) This is discussed in threads on the official Stan help forum, sometimes with direct input by the Stan developers themselves. 
+# See in particular the threads:
       # https://discourse.mc-stan.org/t/metropolis-proposal-rejected-because-location-parameter-is-infinite/6371
       # https://discourse.mc-stan.org/t/manage-warnings-a-production-mode-for-warnings-and-errors-managing-for-the-end-user/1588
       # https://discourse.mc-stan.org/t/variable-does-not-exist-error-for-user-defined-function-in-ode-rk45/18960/7
       # https://discourse.mc-stan.org/t/metropolis-rejection-proposal-due-to-incorrect-numerical-values-for-derived-parameter/3654/4
       # https://discourse.mc-stan.org/t/compilation-error-on-rstan/17972/14
       # https://discourse.mc-stan.org/t/help-ensure-the-shape-parameter-is-positive-finite/26313/4
+      # https://discourse.mc-stan.org/t/model-with-many-correlated-varying-slopes-sampling-not-done/6189/6
 
-# As mentioned in my paper, this warning appears to stem from inclusion of the random/varying intercepts for the 16 villages.
+# Regardless, some threads on the forum suggest that such a warning is likely the result of the starting/initial values values being too extreme
+# and recommend reducing the possible range of the randomly-selected initial values (i.e., [-2, +2]) or simply choosing specific initial values
+# problematic parameters. See also: https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/ 
 
-# Also, depending on the versions of brms/rstan/cmdstanr you are running, you may see the error: "placing brackets after a type is deprecated and will be removed"
+# Accordingly, for all models, I use the following value as the initial value for the standard deviation of the random/varying intercepts.
+# Note that there are three grouping factors — i.e., Egos/I_ID, Alters_J_ID, and Village. For consistency, I use the same starting value for each.
+
+# init_func <- function(chain_id = 1){ # https://stackoverflow.com/a/70349499
+#   list("sd_1" =  0.0001,
+#        "sd_2" =  0.0001,
+#        "sd_3" =  0.0001
+#   )
+# }
+# 
+# init_list <- list(
+#   init_func(chain_id = 1),
+#   init_func(chain_id = 2),
+#   init_func(chain_id = 3),
+#   init_func(chain_id = 4)
+# )
+
+
+# Here I follow the **truly-excellent** tutorial on setting initial values by Solomon Kurtz: https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/ 
+# In it, it use code similar to what appears here to randomly select starting values to one's specific specifications. This is key as initial values across chains
+# are ideally not identical. And Solomon's little method allows one to still maintain reproducibility.
+set_inits <- function(chain_id = chain, seed = chosen_seed, ...) { ## Function to randomly-select initial values for the standard deviation of the random intercepts
+  
+  set.seed(seed)
+  
+  list(
+    "sd_1" = runif(n = 1, min = 0, max = 0.0002), # Standard deviation must be non-negative, and, following reccomendations to deal with the warning above, its possible initial values should be rather restricted.
+    "sd_2" = runif(n = 1, min = 0, max = 0.0002),
+    "sd_3" = runif(n = 1, min = 0, max = 0.0002)
+  )
+  
+}
+
+init_list <- list(
+  # different seed values will return different results
+  set_inits(chain_id = 1, seed = 20200127),
+  set_inits(chain_id = 2, seed = 20190511),
+  set_inits(chain_id = 3, seed = 20180228),
+  set_inits(chain_id = 4, seed = 20160916)
+)
+
+set.seed(20200127) # Reset to main seed for the analysis. 
+
+
+# Finally, depending on the versions of brms/rstan/cmdstanr you are running, you may see the error: "placing brackets after a type is deprecated and will be removed"
 # This error is benign. See this GitHub exchange for details: https://github.com/paul-buerkner/brms/issues/1291
 
 
@@ -98,7 +145,9 @@ fit.1 <- brm(formula = brmsformula(formula = lender_ij
                                    
                                    ~ friend_ij + family_ij + friend_ij:family_ij
                                    
-                                   + lender_ji
+                                   + lender_ji 
+                                   
+                                   # + friend_ij:lender_ji + family_ij:lender_ji + friend_ij:family_ij:lender_ji
                                    
                                    + log_distance_ij_Z
                                    
@@ -149,19 +198,20 @@ fit.1 <- brm(formula = brmsformula(formula = lender_ij
                                    , center = TRUE
 )
 , prior = c(
-  set_prior(prior = "exponential(2)", class = "sd", coef = "", group = "",  dpar = ""), # brms::dstudent_t(x = 1:10, df = 3, mu = 0, sigma = 2.5, log = FALSE) # dexp(1:10, rate = 2)
+  set_prior(prior = "exponential(2)", class = "sd", coef = "", group = "",  dpar = ""), # brms::dstudent_t(x = 1:10, df = 3, mu = 0, sigma = 2.5, log = FALSE) # dexp(1:10, rate = 2) # dnorm(1:10, mean = 0, sd = 1) 
   set_prior(prior = "normal(0, 2.5)", class = "Intercept", coef = "", group = "",  dpar = ""),
-  set_prior(prior = "normal(0, 1)", class = "b", group = "",  dpar = "")
+  set_prior(prior = "normal(0, 1)", class = "b", group = "",  dpar = "") 
 )
 , data = all_village_dyads
 , iter = brms.iter, warmup = brms.warmup, thin = 1
 , cores = brms.cores, chains = brms.chains
-, backend = "cmdstan"
+, inits = init_list
+, backend = "cmdstanr"
 , threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
 , seed = 20200127
 , silent = 0
 , save_pars = save_pars(all = TRUE)
-, file = "fit.1.full.model", file_refit = "on_change"
+, file = "fit.1.full.model", file_refit = "on_change" ## Note that upon the completion of model estimation, brm() will save the fitted model object in your working directory as "file.rds".
 )
 
 gc()
@@ -179,7 +229,9 @@ fit.2 <- brm(formula = brmsformula(formula = lender_ij
                                    
                                    #~ friend_ij + family_ij + friend_ij:family_ij
                                    
-                                   ~ lender_ji
+                                   ~ lender_ji 
+                                   
+                                   # + friend_ij:lender_ji + family_ij:lender_ji + friend_ij:family_ij:lender_ji
                                    
                                    + log_distance_ij_Z
                                    
@@ -230,19 +282,20 @@ fit.2 <- brm(formula = brmsformula(formula = lender_ij
                                    , center = TRUE
 )
 , prior = c(
-  set_prior(prior = "exponential(2)", class = "sd", coef = "", group = "",  dpar = ""), # brms::dstudent_t(x = 1:10, df = 3, mu = 0, sigma = 2.5, log = FALSE) # dexp(1:10, rate = 2)
+  set_prior(prior = "exponential(2)", class = "sd", coef = "", group = "",  dpar = ""), # brms::dstudent_t(x = 1:10, df = 3, mu = 0, sigma = 2.5, log = FALSE) # dexp(1:10, rate = 2) # dnorm(1:10, mean = 0, sd = 1) 
   set_prior(prior = "normal(0, 2.5)", class = "Intercept", coef = "", group = "",  dpar = ""),
-  set_prior(prior = "normal(0, 1)", class = "b", group = "",  dpar = "")
+  set_prior(prior = "normal(0, 1)", class = "b", group = "",  dpar = "") 
 )
 , data = all_village_dyads
 , iter = brms.iter, warmup = brms.warmup, thin = 1
 , cores = brms.cores, chains = brms.chains
-, backend = "cmdstan"
+, inits = init_list
+, backend = "cmdstanr"
 , threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
 , seed = 20200127
 , silent = 0
 , save_pars = save_pars(all = TRUE)
-, file = "fit.2.controls.model", file_refit = "on_change"
+, file = "fit.2.controls.model", file_refit = "on_change" ## Note that upon the completion of model estimation, brm() will save the fitted model object in your working directory as "file.rds".
 )
 
 gc()
@@ -260,7 +313,9 @@ fit.3 <- brm(formula = brmsformula(formula = lender_ij
                                    
                                    ~ friend_ij + family_ij + friend_ij:family_ij
                                    
-                                   + lender_ji
+                                   + lender_ji 
+                                   
+                                   # + friend_ij:lender_ji + family_ij:lender_ji + friend_ij:family_ij:lender_ji
                                    
                                    + log_distance_ij_Z
                                    
@@ -298,32 +353,33 @@ fit.3 <- brm(formula = brmsformula(formula = lender_ij
                                    # https://www.muscardinus.be/2017/07/lme4-random-effects/ (see entry on "Implicit Nesting")
                                    + (1 | i_ID) + (1 | j_ID) + (1 | village) 
                                    
-                                   # + village_population_size_log_Z
-                                   # + village_census_employ_Z
-                                   # + village_census_noAgri_Z
-                                   # + village_census_poverty_Z
-                                   # + village_pg_savingsgroup
-                                   # + village_pg_market_any
-                                   # + village_distArua_log_Z
+                                   + village_population_size_log_Z
+                                   + village_census_employ_Z
+                                   + village_census_noAgri_Z
+                                   + village_census_poverty_Z
+                                   + village_pg_savingsgroup
+                                   + village_pg_market_any
+                                   + village_distArua_log_Z
                                    
                                    , family = bernoulli(link = "logit")
                                    , nl = NULL
                                    , center = TRUE
 )
 , prior = c(
-  set_prior(prior = "exponential(2)", class = "sd", coef = "", group = "",  dpar = ""), # brms::dstudent_t(x = 1:10, df = 3, mu = 0, sigma = 2.5, log = FALSE) # dexp(1:10, rate = 2)
+  set_prior(prior = "exponential(2)", class = "sd", coef = "", group = "",  dpar = ""), # brms::dstudent_t(x = 1:10, df = 3, mu = 0, sigma = 2.5, log = FALSE) # dexp(1:10, rate = 2) # dnorm(1:10, mean = 0, sd = 1)  
   set_prior(prior = "normal(0, 2.5)", class = "Intercept", coef = "", group = "",  dpar = ""),
-  set_prior(prior = "normal(0, 1)", class = "b", group = "",  dpar = "")
+  set_prior(prior = "normal(0, 1)", class = "b", group = "",  dpar = "") 
 )
 , data = all_village_dyads
 , iter = brms.iter, warmup = brms.warmup, thin = 1
 , cores = brms.cores, chains = brms.chains
-, backend = "cmdstan"
+, inits = init_list
+, backend = "cmdstanr"
 , threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
 , seed = 20200127
 , silent = 0
 , save_pars = save_pars(all = TRUE)
-, file = "fit.3.simple.model", file_refit = "on_change"
+, file = "fit.3.simple.model", file_refit = "on_change" ## Note that upon the completion of model estimation, brm() will save the fitted model object in your working directory as "file.rds".
 )
 
 gc()
@@ -334,6 +390,91 @@ closeAllConnections()
 brms:::print.brmsfit(fit.3, digits = 4, prob = 0.95, priors = TRUE, robust = FALSE, mc_se = TRUE)
 # View(rstan::summary(fit.3$fit)$summary) ## Results for *all* estimated parameters
 
+
+
+########## Model 4
+fit.4 <- brm(formula = brmsformula(formula = lender_ij 
+                                   
+                                   ~ friend_ij + family_ij + friend_ij:family_ij
+                                   
+                                   + lender_ji 
+                                   
+                                   + friend_ij:lender_ji + family_ij:lender_ji + friend_ij:family_ij:lender_ji
+                                   
+                                   + log_distance_ij_Z
+                                   
+                                   + goodsgame_ij
+                                   + problemsolver_ij
+                                   
+                                   + gender_i
+                                   + gender_j
+                                   + same_gender_ij
+                                   
+                                   + age_i_Z + age_i_squared_Z
+                                   + age_j_Z + age_j_squared_Z
+                                   + age_absdiff_ij_sqrt_Z
+                                   
+                                   + edu_full_i
+                                   + edu_full_j
+                                   + same_edu_full_ij
+
+                                   + income_i
+
+                                   + hasPhone_i
+                                   + hasPhone_j
+
+                                   + HH_Head_i
+                                   + HH_Head_j
+
+                                   + religion_i
+                                   + religion_j
+                                   + same_religion_ij
+
+                                   + leader_i
+                                   + leader_j
+                                   
+                                   # https://stats.stackexchange.com/a/228814
+                                   # https://www.muscardinus.be/2017/07/lme4-random-effects/ (see entry on "Implicit Nesting")
+                                   + (1 | i_ID) + (1 | j_ID) + (1 | village) 
+                                   
+                                   + village_population_size_log_Z
+                                   + village_census_employ_Z
+                                   + village_census_noAgri_Z
+                                   + village_census_poverty_Z
+                                   + village_pg_savingsgroup
+                                   + village_pg_market_any
+                                   + village_distArua_log_Z
+                                   
+                                   , family = bernoulli(link = "logit")
+                                   , nl = NULL
+                                   , center = TRUE
+)
+, prior = c(
+  set_prior(prior = "exponential(2)", class = "sd", coef = "", group = "",  dpar = ""), # brms::dstudent_t(x = 1:10, df = 3, mu = 0, sigma = 2.5, log = FALSE) # dexp(1:10, rate = 2) # dnorm(1:10, mean = 0, sd = 1)  
+  set_prior(prior = "normal(0, 2.5)", class = "Intercept", coef = "", group = "",  dpar = ""),
+  set_prior(prior = "normal(0, 1)", class = "b", group = "",  dpar = "") 
+)
+, data = all_village_dyads
+, iter = brms.iter, warmup = brms.warmup, thin = 1
+, cores = brms.cores, chains = brms.chains
+, inits = init_list
+, backend = "cmdstanr"
+, threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
+, seed = 20200127
+, silent = 0
+, save_pars = save_pars(all = TRUE)
+, file = "fit.4.extended.model", file_refit = "on_change" ## Note that upon the completion of model estimation, brm() will save the fitted model object in your working directory as "file.rds".
+)
+
+gc()
+closeAllConnections()
+
+# robust: If FALSE (the default) the mean is used as the measure of central tendency and the standard deviation 
+# as the measure of variability. If TRUE, the median and the median absolute deviation (MAD) are applied instead.
+brms:::print.brmsfit(fit.4, digits = 4, prob = 0.95, priors = TRUE, robust = FALSE, mc_se = TRUE)
+# View(rstan::summary(fit.4$fit)$summary) ## Results for *all* estimated parameters
+
+# View(village_networks_coresidence$`11` * village_networks_geodist$`11`)
 
 
 
@@ -353,17 +494,20 @@ brms:::print.brmsfit(fit.3, digits = 4, prob = 0.95, priors = TRUE, robust = FAL
 # https://paul-buerkner.github.io/brms/reference/loo.brmsfit.html
 
 
-
+## Next, clear the environment of all objects save those that are required to run fit the brms models and then clear working memory.
+rm(list = setdiff(ls(), list("all_village_dyads", "brms.cores", "brms.chains", "cmdstanr.threads", "brms.iter", "brms.warmup", "cmdstanr.grainsize", "set_inits", "init_list"))) 
 gc()
+
+fit.1 <- readRDS("fit.1.full.model.rds") ## Load only the model object needed to preserve memory for PSIS-LOO
 
 fit.1 <- add_criterion( 
   x = fit.1,
   criterion = c("loo", "bayes_R2"), 
   ndraws = 1000,
-  cores = 10,
+  cores = 4,
   pointwise = FALSE,
   save_psis = TRUE,
-  overwrite = TRUE
+  overwrite = TRUE ## Save a new version of the object for the fitted model that has diagnostic criterion appended
 )
 gc()
 
@@ -373,13 +517,16 @@ hist(fit.1$criteria$bayes_R2)
 
 
 
+rm(list = setdiff(ls(), list("all_village_dyads", "brms.cores", "brms.chains", "cmdstanr.threads", "brms.iter", "brms.warmup", "cmdstanr.grainsize", "set_inits", "init_list"))) 
 gc()
+
+fit.2 <- readRDS("fit.2.controls.model.rds")
 
 fit.2 <- add_criterion( 
   x = fit.2,
   criterion = c("loo", "bayes_R2"),
   ndraws = 1000,
-  cores = 10,
+  cores = 4,
   pointwise = FALSE,
   save_psis = TRUE,
   overwrite = TRUE
@@ -392,13 +539,16 @@ hist(fit.2$criteria$bayes_R2)
 
 
 
+rm(list = setdiff(ls(), list("all_village_dyads", "brms.cores", "brms.chains", "cmdstanr.threads", "brms.iter", "brms.warmup", "cmdstanr.grainsize", "set_inits", "init_list"))) 
 gc()
+
+fit.3 <- readRDS("fit.3.simple.model.rds")
 
 fit.3 <- add_criterion( 
   x = fit.3,
   criterion = c("loo", "bayes_R2"), 
   ndraws = 1000,
-  cores = 10,
+  cores = 4,
   pointwise = FALSE,
   save_psis = TRUE,
   overwrite = TRUE
@@ -413,6 +563,35 @@ gc()
 
 
 
+rm(list = setdiff(ls(), list("all_village_dyads", "brms.cores", "brms.chains", "cmdstanr.threads", "brms.iter", "brms.warmup", "cmdstanr.grainsize", "set_inits", "init_list"))) 
+gc()
+
+fit.4 <- readRDS("fit.4.extended.model.rds")
+
+fit.4 <- add_criterion( 
+  x = fit.4,
+  criterion = c("loo", "bayes_R2"), 
+  ndraws = 1000,
+  cores = 4,
+  pointwise = FALSE,
+  save_psis = TRUE,
+  overwrite = TRUE
+)
+gc()
+
+fit.4$criteria$loo
+mean(fit.4$criteria$bayes_R2)
+hist(fit.4$criteria$bayes_R2)
+
+gc()
+
+
+#Re-load the rest of the fitted model objects with appended diagnostic criteria
+fit.1 <- readRDS("fit.1.full.model.rds") 
+fit.2 <- readRDS("fit.2.controls.model.rds")
+fit.3 <- readRDS("fit.3.simple.model.rds")
+
+
 # https://avehtari.github.io/modelselection/CV-FAQ.html#15_How_to_interpret_in_Standard_error_(SE)_of_elpd_difference_(elpd_diff)
 # https://discourse.mc-stan.org/t/clarifying-interpretation-of-loo-compare-output/19726/2
 fit.1.vs.fit.2.loo <- loo_compare(fit.1, fit.2, criterion = "loo") 
@@ -421,12 +600,16 @@ print(fit.1.vs.fit.2.loo)
 fit.1.vs.fit.3.loo <- loo_compare(fit.1, fit.3, criterion = "loo") 
 print(fit.1.vs.fit.3.loo)
 
+fit.1.vs.fit.4.loo <- loo_compare(fit.1, fit.4, criterion = "loo") 
+print(fit.1.vs.fit.4.loo)
+
 
 
 # https://discourse.mc-stan.org/t/if-elpd-diff-se-diff-2-is-this-noteworthy/20549/10
 # https://discourse.mc-stan.org/t/if-elpd-diff-se-diff-2-is-this-noteworthy/20549/12
-fit.1.vs.fit.2.loo[, "elpd_diff"][2] + (c(-1, 1) * 2 * fit.1.vs.fit.2.loo[, "se_diff"][2]) # Approximate 95% Interval for elpd_diff
-fit.1.vs.fit.3.loo[, "elpd_diff"][2] + (c(-1, 1) * 2 * fit.1.vs.fit.3.loo[, "se_diff"][2]) # Approximate 95% Interval for elpd_diff
+fit.1.vs.fit.2.loo[, "elpd_diff"][2] + (c(-1, 1) * 1.96 * fit.1.vs.fit.2.loo[, "se_diff"][2]) # Approximate 95% Interval for elpd_diff
+fit.1.vs.fit.3.loo[, "elpd_diff"][2] + (c(-1, 1) * 1.96 * fit.1.vs.fit.3.loo[, "se_diff"][2]) 
+fit.1.vs.fit.4.loo[, "elpd_diff"][2] + (c(-1, 1) * 1.96 * fit.1.vs.fit.4.loo[, "se_diff"][2]) 
 
 
 
@@ -437,13 +620,13 @@ fit.1.vs.fit.3.loo[, "elpd_diff"][2] + (c(-1, 1) * 2 * fit.1.vs.fit.3.loo[, "se_
 # https://personal.sron.nl/~pault/
 
 
-coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3,
+coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
                                ci_level = 0.95,
                                inner_ci_level = 0.68,
                                # conf.method = "quantile", ## Using this option seems to break plot_coefs().Possibly related to broom/broom.mixed clashing.
                                model.names = c(paste0("Full (Model 1)\nBayes R^2 = ",
                                                       sprintf("%.3f", mean(fit.1$criteria$bayes_R2)),
-                                                      "\n95% CI [", 
+                                                      "\n95% QI [", 
                                                       sprintf("%.3f", quantile(fit.1$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
                                                       ", ",
                                                       sprintf("%.3f", quantile(fit.1$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
@@ -451,7 +634,7 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3,
                                                       ),
                                                paste0("Controls (Model 2)\nBayes R^2 = ",
                                                       sprintf("%.3f", mean(fit.2$criteria$bayes_R2)),
-                                                      "\n95% CI [", 
+                                                      "\n95% QI [", 
                                                       sprintf("%.3f", quantile(fit.2$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
                                                       ", ",
                                                       sprintf("%.3f", quantile(fit.2$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
@@ -459,10 +642,18 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3,
                                                       ),
                                                paste0("Simple (Model 3)\nBayes R^2 = ",
                                                       sprintf("%.3f", mean(fit.3$criteria$bayes_R2)),
-                                                      "\n95% CI [", 
+                                                      "\n95% QI [", 
                                                       sprintf("%.3f", quantile(fit.3$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
                                                       ", ",
                                                       sprintf("%.3f", quantile(fit.3$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
+                                                      "]"
+                                               ),
+                                               paste0("Extended (Model 4)\nBayes R^2 = ",
+                                                      sprintf("%.3f", mean(fit.4$criteria$bayes_R2)),
+                                                      "\n95% QI [", 
+                                                      sprintf("%.3f", quantile(fit.4$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
+                                                      ", ",
+                                                      sprintf("%.3f", quantile(fit.4$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
                                                       "]"
                                                )
                                                ),
@@ -470,7 +661,10 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3,
                                           "Best Friend of Ego" = "friend_ijBestFriend",
                                           "Salient Kin of Ego" = "family_ijSalientKin",
                                           "Best Friend of Ego x Salient Kin of Ego" = "friend_ijBestFriend:family_ijSalientKin",
-                                          "Money Lender for Alter" = "lender_ji",
+                                          "Money Lender for Alter" = "lender_jiYes",
+                                          "Best Friend of Ego x Money Lender for Alter" = "friend_ijBestFriend:lender_jiYes",
+                                          "Salient Kin of Ego x Money Lender for Alter" = "family_ijSalientKin:lender_jiYes",
+                                          "Best Friend of Ego x Salient Kin of Ego x Money Lender for Alter" = "friend_ijBestFriend:family_ijSalientKin:lender_jiYes",
                                           "Geographic Distance Between Ego and Alter (Log)" = "log_distance_ij_Z",
                                           "Preferred Money Handler of Ego" = "goodsgame_ijPreferredMoneyHandler",
                                           "Preferred Problem Solver of Ego" = "problemsolver_ijPreferredProblemSolver",
@@ -505,7 +699,7 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3,
                                           
                                ),
                                omit.coefs = NULL,
-                               colors = c("#EE7733", "#33BBEE", "#009988"),
+                               colors = c("#EE7733", "#009988", "#CC3311", "#33BBEE"),
                                plot.distributions = FALSE,
                                exp = FALSE,
                                point.shape = TRUE,
@@ -513,87 +707,75 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3,
                                
 )  + labs(title = NULL,
           y = NULL,
-          x = expression(Posterior~Mean~Log~Odds~Ratio~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender][" (i = Ego, j = Alter, k = Village)"]~plain("+ 95% Quantile Interval [68% Inner]")), # https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/plotmath.html
+          x = expression(Posterior~Mean~Log~Odds~Ratio~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender][" (i = Ego, j = Alter, k = Village)"]~plain("+ 95% Quantile Interval [QI] + 68% Inner QI")), # https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/plotmath.html
+          
+          ## This sections uses the paste0 funciton to combine various bits of information about the random intercepts together to create the big caption at the bottom of Figure 1.
           caption = paste0("\n", # http://paul-buerkner.github.io/brms/reference/VarCorr.brmsfit.html
                            "SD of Varying Intercepts for Village (Levels = 16) - ",
                            "Model 1 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Q97.5"]),
-                                                   "])"
-                           ),
+                           "])",
+                           
                            "; Model 2 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Q97.5"]),
-                                                   "]"
-                           ),
+                           "])",
+                           
                            "; Model 3 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Q97.5"]),
-                                                   "]"
-                           ),
+                           "])",
+                           
+                           "; Model 4 (",
+                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
+                           "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
+                           "])",
                            
                            "\n",
                            "SD of Varying Intercepts for Village:Ego (Levels = 3,184) - ",
                            "Model 1 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Q97.5"]),
-                                                   "])"
-                           ),
+                           "])",
+                           
                            "; Model 2 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Q97.5"]),
-                                                   "]"
-                           ),
+                           "])",
+                           
                            "; Model 3 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Q97.5"]),
-                                                   "]"
-                           ),
+                           "])",
+                           
+                           "; Model 4 (",
+                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
+                           "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
+                           "])",
+                           
                            
                            "\n",
                            "SD of Varying Intercepts for Village:Alter (Levels = 3,184) - ",
                            "Model 1 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Q97.5"]),
-                                                   "])"
-                           ),
+                           "])",
+                           
                            "; Model 2 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Q97.5"]),
-                                                   "]"
-                           ),
+                           "])",
+                           
                            "; Model 3 (",
                            "Estimate = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
-                           "; 95% CI = [", paste0( sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Q2.5"]),
-                                                   ", ",
-                                                   sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Q97.5"]),
-                                                   "]"
-                           )
+                           "])",
+                           
+                           "; Model 4 (",
+                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
+                           "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
+                           "])"
 
 
           )
@@ -623,144 +805,40 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3,
 
 
 
-#################################### FIGURE 2a: CONDITIONAL EFFECTS ####################################
-typical_dyad <- rbind.data.frame(  
-  "Ego (Female) - Alter (Female)" = cbind.data.frame(lender_ji = 0,
-                                                     log_distance_ij_Z = 0,  ## Note the standardization/use of Z scores!
-                                                     goodsgame_ij = "Not Preferred Money Handler",
-                                                     problemsolver_ij = "Not Preferred Problem Solver",
-                                                     gender_i = "Female",
-                                                     gender_j = "Female",
-                                                     same_gender_ij = "Same Gender",
-                                                     age_i_Z = 0,
-                                                     age_i_squared_Z = 0,
-                                                     age_j_Z = 0,
-                                                     age_j_squared_Z = 0,
-                                                     age_absdiff_ij_sqrt_Z = min(fit.1$data$age_absdiff_ij_sqrt_Z), ## We want two individuals of the SAME AGE, thus age_absdiff_ij equal to zero, where age_absdiff_ij_sqrt_Z == 0 == Mean sqrt(age difference)!
-                                                     edu_full_i = 1,
-                                                     edu_full_j = 1,
-                                                     same_edu_full_ij = "Same Level of Education",
-                                                     income_i = 0,
-                                                     hasPhone_i = "Yes",
-                                                     hasPhone_j = "Yes",
-                                                     leader_i = "No",
-                                                     leader_j = "No",
-                                                     HH_Head_i = "No",
-                                                     HH_Head_j = "No",
-                                                     religion_i = "Catholic",
-                                                     religion_j = "Catholic",
-                                                     same_religion_ij = "Same Religion",
-                                                     village_population_size_log_Z = 0,
-                                                     village_census_employ_Z = 0,
-                                                     village_census_noAgri_Z = 0,
-                                                     village_census_poverty_Z = 0,
-                                                     village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
-                                                     village_pg_market_any = "No Market",
-                                                     village_distArua_log_Z = 0
-                                                     
-  ),
-  
-  "Ego (Male) - Alter (Male)" = cbind.data.frame(lender_ji = 0,
-                                                 log_distance_ij_Z = 0,
-                                                 goodsgame_ij = "Not Preferred Money Handler",
-                                                 problemsolver_ij = "Not Preferred Problem Solver",
-                                                 gender_i = "Male",
-                                                 gender_j = "Male",
-                                                 same_gender_ij = "Same Gender",
-                                                 age_i_Z = 0,
-                                                 age_i_squared_Z = 0,
-                                                 age_j_Z = 0,
-                                                 age_j_squared_Z = 0,
-                                                 age_absdiff_ij_sqrt_Z = min(fit.1$data$age_absdiff_ij_sqrt_Z), ## We want two individuals of the SAME AGE, thus age_absdiff_ij equal to zero, where age_absdiff_ij_sqrt_Z == 0 == Mean sqrt(age difference)!
-                                                 edu_full_i = 1,
-                                                 edu_full_j = 1,
-                                                 same_edu_full_ij = "Same Level of Education",
-                                                 income_i = 0,
-                                                 hasPhone_i = "Yes",
-                                                 hasPhone_j = "Yes",
-                                                 leader_i = "No",
-                                                 leader_j = "No",
-                                                 HH_Head_i = "No",
-                                                 HH_Head_j = "No",
-                                                 religion_i = "Catholic",
-                                                 religion_j = "Catholic",
-                                                 same_religion_ij = "Same Religion",
-                                                 village_population_size_log_Z = 0,
-                                                 village_census_employ_Z = 0,
-                                                 village_census_noAgri_Z = 0,
-                                                 village_census_poverty_Z = 0,
-                                                 village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
-                                                 village_pg_market_any = "No Market",
-                                                 village_distArua_log_Z = 0
-  ),
-  
-  "Ego (Male) - Alter (Female)" = cbind.data.frame(lender_ji = 0,
-                                                   log_distance_ij_Z = 0,
-                                                   goodsgame_ij = "Not Preferred Money Handler",
-                                                   problemsolver_ij = "Not Preferred Problem Solver",
-                                                   gender_i = "Male",
-                                                   gender_j = "Female",
-                                                   same_gender_ij = "Different Gender",
-                                                   age_i_Z = 0,
-                                                   age_i_squared_Z = 0,
-                                                   age_j_Z = 0,
-                                                   age_j_squared_Z = 0,
-                                                   age_absdiff_ij_sqrt_Z = min(fit.1$data$age_absdiff_ij_sqrt_Z), ## We want two individuals of the SAME AGE, thus age_absdiff_ij equal to zero, where age_absdiff_ij_sqrt_Z == 0 == Mean sqrt(age difference)!
-                                                   edu_full_i = 1,
-                                                   edu_full_j = 1,
-                                                   same_edu_full_ij = "Same Level of Education",
-                                                   income_i = 0,
-                                                   hasPhone_i = "Yes",
-                                                   hasPhone_j = "Yes",
-                                                   leader_i = "No",
-                                                   leader_j = "No",
-                                                   HH_Head_i = "No",
-                                                   HH_Head_j = "No",
-                                                   religion_i = "Catholic",
-                                                   religion_j = "Catholic",
-                                                   same_religion_ij = "Same Religion",
-                                                   village_population_size_log_Z = 0,
-                                                   village_census_employ_Z = 0,
-                                                   village_census_noAgri_Z = 0,
-                                                   village_census_poverty_Z = 0,
-                                                   village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
-                                                   village_pg_market_any = "No Market",
-                                                   village_distArua_log_Z = 0
-  ),
-  
-  "Ego (Female) - Alter (Male)" = cbind.data.frame(lender_ji = 0,
-                                                   log_distance_ij_Z = 0,
-                                                   goodsgame_ij = "Not Preferred Money Handler",
-                                                   problemsolver_ij = "Not Preferred Problem Solver",
-                                                   gender_i = "Female",
-                                                   gender_j = "Male",
-                                                   same_gender_ij = "Different Gender",
-                                                   age_i_Z = 0,
-                                                   age_i_squared_Z = 0,
-                                                   age_j_Z = 0,
-                                                   age_j_squared_Z = 0,
-                                                   age_absdiff_ij_sqrt_Z = min(fit.1$data$age_absdiff_ij_sqrt_Z), ## We want two individuals of the SAME AGE, thus age_absdiff_ij equal to zero, where age_absdiff_ij_sqrt_Z == 0 == Mean sqrt(age difference)!
-                                                   edu_full_i = 1,
-                                                   edu_full_j = 1,
-                                                   same_edu_full_ij = "Same Level of Education",
-                                                   income_i = 0,
-                                                   hasPhone_i = "Yes",
-                                                   hasPhone_j = "Yes",
-                                                   leader_i = "No",
-                                                   leader_j = "No",
-                                                   HH_Head_i = "No",
-                                                   HH_Head_j = "No",
-                                                   religion_i = "Catholic",
-                                                   religion_j = "Catholic",
-                                                   same_religion_ij = "Same Religion",
-                                                   village_population_size_log_Z = 0,
-                                                   village_census_employ_Z = 0,
-                                                   village_census_noAgri_Z = 0,
-                                                   village_census_poverty_Z = 0,
-                                                   village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
-                                                   village_pg_market_any = "No Market",
-                                                   village_distArua_log_Z = 0
-  )
+#################################### FIGURE 2a: CONDITIONAL EFFECTS FOR MODEL 1 ####################################
+typical_dyad <- cbind.data.frame(lender_ji = "No",
+                                 log_distance_ij_Z = 0, ## Note the standardization/use of Z scores!
+                                 goodsgame_ij = "Not Preferred Money Handler",
+                                 problemsolver_ij = "Not Preferred Problem Solver",
+                                 gender_i = "Female",
+                                 gender_j = "Female",
+                                 same_gender_ij = "Same Gender",
+                                 age_i_Z = 0,
+                                 age_i_squared_Z = 0,
+                                 age_j_Z = 0,
+                                 age_j_squared_Z = 0,
+                                 age_absdiff_ij_sqrt_Z = min(fit.1$data$age_absdiff_ij_sqrt_Z), ## We want two individuals of the SAME AGE, thus age_absdiff_ij equal to zero, where age_absdiff_ij_sqrt_Z == 0 == Mean sqrt(age difference)!
+                                 edu_full_i = 1,
+                                 edu_full_j = 1,
+                                 same_edu_full_ij = "Same Level of Education",
+                                 income_i = 0,
+                                 hasPhone_i = "Yes",
+                                 hasPhone_j = "Yes",
+                                 leader_i = "No",
+                                 leader_j = "No",
+                                 HH_Head_i = "No",
+                                 HH_Head_j = "No",
+                                 religion_i = "Catholic",
+                                 religion_j = "Catholic",
+                                 same_religion_ij = "Same Religion",
+                                 village_population_size_log_Z = 0,
+                                 village_census_employ_Z = 0,
+                                 village_census_noAgri_Z = 0,
+                                 village_census_poverty_Z = 0,
+                                 village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
+                                 village_pg_market_any = "No Market",
+                                 village_distArua_log_Z = 0
+                                 
 )
 
 
@@ -780,7 +858,7 @@ condeff_plot <- conditional_effects(x = fit.1,
 
 
 # Construct Plot
-condeff_plot_object <- brms:::plot.brms_conditional_effects(condeff_plot, facet_args = list("ncol" = 2), theme = theme_nice(style = "black"), plot = FALSE)
+condeff_plot_object <- brms:::plot.brms_conditional_effects(condeff_plot, facet_args = list("ncol" = 1), theme = theme_nice(style = "black"), plot = FALSE)
 condeff_plot_object <- condeff_plot_object$`friend_ij:family_ij`
 condeff_plot_object <- (condeff_plot_object + theme(axis.line = element_line(color = "black"),
                                                     legend.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend bg
@@ -791,6 +869,7 @@ condeff_plot_object <- (condeff_plot_object + theme(axis.line = element_line(col
                                                     panel.grid.major = element_blank(),
                                                     panel.grid.minor = element_blank(),
                                                     panel.border = element_blank(),
+                                                    panel.spacing.x = unit(0.25, "cm"),
                                                     axis.text = element_text(size = 10),
                                                     axis.title = element_text(size = 10),
                                                     legend.position = "bottom",
@@ -803,7 +882,6 @@ condeff_plot_object <- (condeff_plot_object + theme(axis.line = element_line(col
 ) 
 
 
-
 # plot(condeff_plot_object)
 # ggsave(plot = condeff_plot_object, 
 #        filename = "F2b_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
@@ -812,7 +890,7 @@ condeff_plot_object <- (condeff_plot_object + theme(axis.line = element_line(col
 
 
 
-#################################### FIGURE 2b: DIFFERENCE IN EXPECTED LOG POINTWISE PREDICTIVE DENSITIES ####################################
+#################################### FIGURE 2b: DIFFERENCE IN EXPECTED LOG POINTWISE PREDICTIVE DENSITIES (MODEL 1 vs. MODEL 4) ####################################
 # Following Code by: Gabry, J., Simpson, D., Vehtari, A., Betancourt, M., & Gelman, A. (2019). Visualization in Bayesian Workflow. Journal of the Royal Statistical Society: Series A (Statistics in Society), 182(2), 389–402. https://doi.org/10.1111/rssa.12378
 # Gabry et al. GitHub: https://github.com/jgabry/bayes-vis-paper/blob/master/bayes-vis.R#L489
 
@@ -871,45 +949,166 @@ elpd_diff_plot <- (ggplot(elpd_diffs, aes(x = Index, y = diff12))
 
 # plot(elpd_diff_plot)
 # ggsave(plot = elpd_diff_plot, 
-#        filename = "F2b_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
+#        filename = "F2c_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
 #        scale = 2.75, width = 2.25, height = 2, units = "in", bg = "transparent")
 
 
 
 
-#################################### FIGURE 2a + 2b ####################################
+#################################### FIGURE 2c: CONDITIONAL EFFECTS FOR MODEL 4 ####################################
+typical_dyad.2 <- rbind.data.frame(  
+  "Ego Money Lender for Alter" = cbind.data.frame(lender_ji = "Yes",
+                                              log_distance_ij_Z = 0,  ## Note the standardization/use of Z scores!
+                                              goodsgame_ij = "Not Preferred Money Handler",
+                                              problemsolver_ij = "Not Preferred Problem Solver",
+                                              gender_i = "Female",
+                                              gender_j = "Female",
+                                              same_gender_ij = "Same Gender",
+                                              age_i_Z = 0,
+                                              age_i_squared_Z = 0,
+                                              age_j_Z = 0,
+                                              age_j_squared_Z = 0,
+                                              age_absdiff_ij_sqrt_Z = min(fit.1$data$age_absdiff_ij_sqrt_Z), ## We want two individuals of the SAME AGE, thus age_absdiff_ij equal to zero, where age_absdiff_ij_sqrt_Z == 0 == Mean sqrt(age difference)!
+                                              edu_full_i = 1,
+                                              edu_full_j = 1,
+                                              same_edu_full_ij = "Same Level of Education",
+                                              income_i = 0,
+                                              hasPhone_i = "Yes",
+                                              hasPhone_j = "Yes",
+                                              leader_i = "No",
+                                              leader_j = "No",
+                                              HH_Head_i = "No",
+                                              HH_Head_j = "No",
+                                              religion_i = "Catholic",
+                                              religion_j = "Catholic",
+                                              same_religion_ij = "Same Religion",
+                                              village_population_size_log_Z = 0,
+                                              village_census_employ_Z = 0,
+                                              village_census_noAgri_Z = 0,
+                                              village_census_poverty_Z = 0,
+                                              village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
+                                              village_pg_market_any = "No Market",
+                                              village_distArua_log_Z = 0
+                                              
+  ),
+  
+  "Ego Not a Money Lender for Alter" = cbind.data.frame(lender_ji = "No",
+                                                    log_distance_ij_Z = 0,  ## Note the standardization/use of Z scores!
+                                                    goodsgame_ij = "Not Preferred Money Handler",
+                                                    problemsolver_ij = "Not Preferred Problem Solver",
+                                                    gender_i = "Male",
+                                                    gender_j = "Male",
+                                                    same_gender_ij = "Same Gender",
+                                                    age_i_Z = 0,
+                                                    age_i_squared_Z = 0,
+                                                    age_j_Z = 0,
+                                                    age_j_squared_Z = 0,
+                                                    age_absdiff_ij_sqrt_Z = min(fit.1$data$age_absdiff_ij_sqrt_Z), ## We want two individuals of the SAME AGE, thus age_absdiff_ij equal to zero, where age_absdiff_ij_sqrt_Z == 0 == Mean sqrt(age difference)!
+                                                    edu_full_i = 1,
+                                                    edu_full_j = 1,
+                                                    same_edu_full_ij = "Same Level of Education",
+                                                    income_i = 0,
+                                                    hasPhone_i = "Yes",
+                                                    hasPhone_j = "Yes",
+                                                    leader_i = "No",
+                                                    leader_j = "No",
+                                                    HH_Head_i = "No",
+                                                    HH_Head_j = "No",
+                                                    religion_i = "Catholic",
+                                                    religion_j = "Catholic",
+                                                    same_religion_ij = "Same Religion",
+                                                    village_population_size_log_Z = 0,
+                                                    village_census_employ_Z = 0,
+                                                    village_census_noAgri_Z = 0,
+                                                    village_census_poverty_Z = 0,
+                                                    village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
+                                                    village_pg_market_any = "No Market",
+                                                    village_distArua_log_Z = 0
+  )
+)
+
+# On plotting three-way interactiosn w/ brms, see: https://discourse.mc-stan.org/t/how-do-i-use-the-conditions-argument-for-conditional-effects/26884/4
+condeff_plot.2 <- conditional_effects(x = fit.4,
+                                      method = "posterior_epred",
+                                      effects = c("friend_ij:family_ij"),
+                                      conditions = typical_dyad.2,
+                                      categorical = FALSE,
+                                      re_formula = NA,
+                                      prob = 0.95,
+                                      resolution = 1000,
+                                      cores = 1,
+                                      plot = FALSE
+)
+
+
+
+# Construct Plot
+condeff_plot_object.2 <- brms:::plot.brms_conditional_effects(condeff_plot.2, facet_args = list("ncol" = 2), theme = theme_nice(style = "black"), plot = FALSE)
+condeff_plot_object.2 <- condeff_plot_object.2$`friend_ij:family_ij`
+condeff_plot_object.2 <- (condeff_plot_object.2 + theme(axis.line = element_line(color = "black"),
+                                                        legend.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend bg
+                                                        legend.box.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend panel bg
+                                                        legend.key = element_rect(fill = "transparent", colour = "transparent"),
+                                                        plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot,
+                                                        panel.background = element_rect(fill = "transparent"), # bg of the panel
+                                                        panel.grid.major = element_blank(),
+                                                        panel.grid.minor = element_blank(),
+                                                        panel.border = element_blank(),
+                                                        panel.spacing.x = unit(0.25, "cm"),
+                                                        axis.text = element_text(size = 10),
+                                                        axis.title = element_text(size = 10),
+                                                        legend.position = "bottom",
+                                                        legend.title = element_blank()
+) 
++ labs(title = NULL, x = NULL, y = expression(Predicted~Probability~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender]))
++ scale_y_continuous(limits = c(0, 0.25), breaks = seq(0, 0.25, 0.025))
++ scale_color_manual(values = c("#4393C3", "#B2182B"))
++ guides(fill = "none") # https://statisticsglobe.com/remove-legend-ggplot2-r
+) 
+
+
+# plot(condeff_plot_object.2)
+# ggsave(plot = condeff_plot_object.2, 
+#        filename = "F2b_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
+#        scale = 2.75, width = 2.25, height = 2.25, units = "in", bg = "transparent")
+
+
+
+
+#################################### FIGURE 2a + 2b + 2c ####################################
 ## Combine the panels to make Figure 2
 # https://wilkelab.org/cowplot/articles/plot_grid.html
 
-condeff_plot_object_and_elpd_diff_plot <- plot_grid(condeff_plot_object, elpd_diff_plot, 
-                                                    labels = c("a", "b"), 
+condeff_plot_object_and_elpd_diff_plot <- plot_grid(condeff_plot_object, elpd_diff_plot, condeff_plot_object.2,
+                                                    labels = c("a", "b", "c"), 
+                                                    ncol = 3,
                                                     label_size = 13,
                                                     # label_fontfamily = "sans",
                                                     label_fontface = "bold",
                                                     vjust = 1,
-                                                    rel_widths = c(1, 1), 
-                                                    rel_heights = c(0.75, 1)
-                                                    )
+                                                    rel_widths = c(0.65, 1.30, 1.10), 
+                                                    rel_heights = c(0.75, 1, 0.75)
+)
 
 
 
 # plot(coefficient.plot)
 ggsave(plot = condeff_plot_object_and_elpd_diff_plot, 
        filename = "F2_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
-       scale = 2.75, width = 4.5, height = 2.25, units = "in", bg = "transparent")
+       scale = 3.5, width = 5, height = 1.5, units = "in", bg = "transparent")
 
 
 
 
 #################################### POSTERIOR PREDICTIVE CHECKS ####################################
-## Overall/Unconditional Probability of Seeking Financial Aid P(y = 1) 
+## Overall/Unconditional Probability of Seeking Financial Aid p(y_ijk = 1) 
 ## Comparison of the proportion of 1s in the data vs the proportions of 1s in the posterior predictive distribution
 ## See: # https://discourse.mc-stan.org/t/simple-ppc-for-logistic-regression/17749/7
 
 # The posterior predictive distribution is the distribution of the outcome implied by the model after 
 # using the observed data to update our beliefs about the unknown parameters in the model. Simulating 
 # data from the posterior predictive distribution using the observed predictors is useful for checking
-# the fit of the model. Can be performed for the data used to fit the model (posterior predictive checks) 
+# the fit of the model. This can be performed for the data used to fit the model (posterior predictive checks) 
 # or for new data. By definition, these draws have higher variance than draws of the means of the posterior 
 # predictive distribution computed by posterior_epred.brmsfit. This is because the residual error is 
 # incorporated in posterior_predict.
@@ -919,11 +1118,13 @@ ggsave(plot = condeff_plot_object_and_elpd_diff_plot,
 # https://mc-stan.org/rstanarm/reference/posterior_predict.stanreg.html
 
 
-## First, grab the draws fromt he posterior under each model
+## First, grab the draws from the posterior under each model
 # For those who are new to PP Checks, see this step-by-step guide: https://mc-stan.org/bayesplot/articles/graphical-ppcs.html
-fit.1.pp <- posterior_predict(fit.1, newdata = NULL, re_formula = NULL, ndraws = 1000, cores = 10, summary = FALSE)
-fit.2.pp <- posterior_predict(fit.2, newdata = NULL, re_formula = NULL, ndraws = 1000, cores = 10, summary = FALSE)
-fit.3.pp <- posterior_predict(fit.3, newdata = NULL, re_formula = NULL, ndraws = 1000, cores = 10, summary = FALSE)
+# Note that the returned result will be quite large in terms of memory and setting ndraws higher can result in R/Rstudio crashing due to memory availability
+fit.1.pp <- posterior_predict(fit.1, newdata = NULL, re_formula = NULL, ndraws = 500, cores = 1, summary = FALSE)
+fit.2.pp <- posterior_predict(fit.2, newdata = NULL, re_formula = NULL, ndraws = 500, cores = 1, summary = FALSE)
+fit.3.pp <- posterior_predict(fit.3, newdata = NULL, re_formula = NULL, ndraws = 500, cores = 1, summary = FALSE)
+fit.4.pp <- posterior_predict(fit.4, newdata = NULL, re_formula = NULL, ndraws = 500, cores = 1, summary = FALSE) # RUN: format(object.size(fit.4.pp), units = "Gb")
 
 
 ## Second, create model-specific pp-checks for the within-village unconditional mean of seeking financial aid
@@ -967,51 +1168,65 @@ fit.3.pp.stat.grouped <- ppc_stat_grouped(
 
 
 
+fit.4.pp.stat.grouped <- ppc_stat_grouped(
+  y = fit.4$data$lender_ij,
+  yrep = fit.4.pp,
+  group = factor(fit.4$data$village, levels = as.character( sort( as.numeric( levels(fit.4$data$village) ) ) ) ), 
+  stat = "mean",
+  facet_args = list(),
+  binwidth = 0.0001,
+  breaks = NULL,
+  freq = TRUE
+)
+
+
 fit.1.pp.stat.grouped + theme(text = element_text(family = "Arial", size = 14)) + labs(title = expression("(Model 1)"~Expected~Unconditional~Probability~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender])) # https://stackoverflow.com/a/43010647
 fit.2.pp.stat.grouped + theme(text = element_text(family = "Arial", size = 14)) + labs(title = expression("(Model 2)"~Expected~Unconditional~Probability~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender]))
 fit.3.pp.stat.grouped + theme(text = element_text(family = "Arial", size = 14)) + labs(title = expression("(Model 3)"~Expected~Unconditional~Probability~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender]))
+fit.4.pp.stat.grouped + theme(text = element_text(family = "Arial", size = 14)) + labs(title = expression("(Model 4)"~Expected~Unconditional~Probability~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender]))
 
 
 
 ## Third, create model-specific pp-checks for the overall unconditional mean of seeking financial aid
 ## This is the graph that is inset within Figure 1 which depicts the coefficient plot depicting results from the models
-fit.1.and.fit.2.and.fit.3.pp.mean <- rbind.data.frame(cbind.data.frame(Model = "Full (Model 1)", Y_Synth_Mean = rowMeans(fit.1.pp) ),
-                                                      cbind.data.frame(Model = "Controls (Model 2)", Y_Synth_Mean = rowMeans(fit.2.pp) ),
-                                                      cbind.data.frame(Model = "Simple (Model 3)", Y_Synth_Mean = rowMeans(fit.3.pp) )
+fit.1.and.fit.2.and.fit.3.and.fit.4.pp.mean <- rbind.data.frame(cbind.data.frame(Model = "Full (Model 1)", Y_Synth_Mean = rowMeans(fit.1.pp) ),
+                                                                cbind.data.frame(Model = "Controls (Model 2)", Y_Synth_Mean = rowMeans(fit.2.pp) ),
+                                                                cbind.data.frame(Model = "Simple (Model 3)", Y_Synth_Mean = rowMeans(fit.3.pp) ),
+                                                                cbind.data.frame(Model = "Extended (Model 4)", Y_Synth_Mean = rowMeans(fit.4.pp) )
 )
 
-fit.1.and.fit.2.and.fit.3.pp.mean$Model <- factor(fit.1.and.fit.2.and.fit.3.pp.mean$Model, levels = c("Full (Model 1)", "Controls (Model 2)", "Simple (Model 3)"))
+fit.1.and.fit.2.and.fit.3.and.fit.4.pp.mean$Model <- factor(fit.1.and.fit.2.and.fit.3.and.fit.4.pp.mean$Model, levels = c("Full (Model 1)", "Controls (Model 2)", "Simple (Model 3)", "Extended (Model 4)"))
 
 
 
-fit.1.and.fit.2.and.fit.3.pp.stat.custom <- (ggplot(fit.1.and.fit.2.and.fit.3.pp.mean, aes(x = Y_Synth_Mean, color = Model, fill = NULL)) # , linetype = Model
-                                             + geom_density(kernel = "gaussian", bw = 0.00003, position = "identity", size = 0.60, trim = TRUE) # See: https://r-coder.com/density-plot-r/
-                                             + geom_rug(sides = "b", alpha = 0.2, linetype = "solid") 
-                                             + geom_vline(xintercept = mean(fit.1$data$lender_ij), linetype = 2, size = 0.15) 
-                                             + theme_nice(style = "black", base_rect_size = 0)
-                                             + theme(axis.line = element_line(color = "black"),
-                                                     legend.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend bg
-                                                     legend.box.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend panel bg
-                                                     legend.key = element_rect(fill = "transparent", colour = "transparent"),
-                                                     plot.background = element_rect(fill = "white", color = NA), # bg of the plot,
-                                                     panel.background = element_rect(fill = "white", colour = NA), # bg of the panel
-                                                     panel.grid.major = element_blank(),
-                                                     panel.grid.minor = element_blank(),
-                                                     panel.border = element_blank(),
-                                                     legend.position = "none",
-                                                     legend.title = element_blank(),
-                                                     axis.text.y = element_blank(), #element_text(size = 10),
-                                                     text = element_text(size = 8.25),
-                                                     plot.title = element_text(size = 8.25),
-                                                     strip.text = element_blank()
-                                             ) 
-                                             + scale_color_manual(values = c("#EE7733", "#33BBEE", "#009988"))
-                                             + scale_x_continuous(limits = c(0.0088, 0.0102), breaks = seq(0.0088, 0.0102, 0.0002))
-                                             + labs(y = NULL,
-                                                    x = expression(bar(italic(Y))[Synthetic]~"(Based on 1000 Posterior Draws per Model [Rug Plot]; Bandwidth = 0.00003)"),
-                                                    title = expression("Posterior Predictive Check:"~Unconditional~Probability~of~italic(Y)[ijk][" = "][1]),
-                                                    subtitle = expression(bar(italic(Y))[Observed]~"(Dashed Line)"~vs.~"Gaussian Kernel Density Plots of"~bar(italic(Y))[Synthetic]~"Under Models 1, 2, and 3") # https://stackoverflow.com/a/43010647
-                                             )
+fit.1.and.fit.2.and.fit.3.and.fit.4.pp.stat.custom <- (ggplot(fit.1.and.fit.2.and.fit.3.and.fit.4.pp.mean, aes(x = Y_Synth_Mean, color = Model, fill = NULL)) # , linetype = Model
+                                                       + geom_density(kernel = "gaussian", bw = 0.00003, position = "identity", size = 0.60, trim = TRUE) # See: https://r-coder.com/density-plot-r/
+                                                       + geom_rug(sides = "b", alpha = 0.2, linetype = "solid") 
+                                                       + geom_vline(xintercept = mean(fit.1$data$lender_ij), linetype = 2, size = 0.15) 
+                                                       + theme_nice(style = "black", base_rect_size = 0)
+                                                       + theme(axis.line = element_line(color = "black"),
+                                                               legend.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend bg
+                                                               legend.box.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend panel bg
+                                                               legend.key = element_rect(fill = "transparent", colour = "transparent"),
+                                                               plot.background = element_rect(fill = "white", color = NA), # bg of the plot,
+                                                               panel.background = element_rect(fill = "white", colour = NA), # bg of the panel
+                                                               panel.grid.major = element_blank(),
+                                                               panel.grid.minor = element_blank(),
+                                                               panel.border = element_blank(),
+                                                               legend.position = "none",
+                                                               legend.title = element_blank(),
+                                                               axis.text.y = element_blank(), #element_text(size = 10),
+                                                               text = element_text(size = 8.25),
+                                                               plot.title = element_text(size = 8.25),
+                                                               strip.text = element_blank()
+                                                       ) 
+                                                       + scale_color_manual(values = c("#EE7733", "#009988", "#CC3311", "#33BBEE"))
+                                                       + scale_x_continuous(limits = c(0.0088, 0.0100), breaks = seq(0.0088, 0.0100, 0.0002))
+                                                       + labs(y = NULL,
+                                                              x = expression(bar(italic(Y))[Synthetic]~"(Based on 500 Posterior Draws per Model [Rug Plot]; Bandwidth = 0.00003)"),
+                                                              title = expression("Posterior Predictive Check:"~Unconditional~Probability~of~italic(Y)[ijk][" = "][1]),
+                                                              subtitle = expression(bar(italic(Y))[Observed]~"(Dashed Line)"~vs.~"Gaussian Kernel Density Plots of"~bar(italic(Y))[Synthetic]~"Under Models 1, 2, 3, and 4") # https://stackoverflow.com/a/43010647
+                                                       )
 ) 
 
 
@@ -1020,7 +1235,7 @@ fit.1.and.fit.2.and.fit.3.pp.stat.custom <- (ggplot(fit.1.and.fit.2.and.fit.3.pp
 # https://stackoverflow.com/a/52841737
 coefficient.plot.with.inset <- (ggdraw() 
                                 + draw_plot(coefficient.plot) 
-                                + draw_plot(fit.1.and.fit.2.and.fit.3.pp.stat.custom, x = 0.625, y = .115, width = .355, height = .275)
+                                + draw_plot(fit.1.and.fit.2.and.fit.3.and.fit.4.pp.stat.custom, x = 0.625, y = .115, width = .355, height = .275)
 )
 
 
@@ -1028,7 +1243,7 @@ coefficient.plot.with.inset <- (ggdraw()
 # plot(coefficient.plot)
 ggsave(plot = coefficient.plot.with.inset, 
        filename = "F1_Friends_Kin_FinancialSupport_Inset.png", device = "png", dpi = 1200,
-       scale = 3, width = 4.75, height = 4.25, units = "in", bg = "transparent")
+       scale = 3, width = 4.75, height = 4.40, units = "in", bg = "transparent")
 
 
 
@@ -1041,14 +1256,19 @@ summary(apply(brms:::as.array.brmsfit(fit.1), MARGIN = 3, FUN = rstan::ess_bulk)
 summary(apply(brms:::as.array.brmsfit(fit.1), MARGIN = 3, FUN = rstan::ess_tail)) ## Tail (Rank-Normalised) ESS
 
 
-summary(rstan::summary(fit.2$fit)$summary[,"n_eff"]) ## Standard ESS
-summary(apply(brms:::as.array.brmsfit(fit.2), MARGIN = 3, FUN = rstan::ess_bulk)) ## Bulk (Rank-Normalised) ESS
-summary(apply(brms:::as.array.brmsfit(fit.2), MARGIN = 3, FUN = rstan::ess_tail)) ## Tail (Rank-Normalised) ESS
+summary(rstan::summary(fit.2$fit)$summary[,"n_eff"]) 
+summary(apply(brms:::as.array.brmsfit(fit.2), MARGIN = 3, FUN = rstan::ess_bulk)) 
+summary(apply(brms:::as.array.brmsfit(fit.2), MARGIN = 3, FUN = rstan::ess_tail)) 
 
 
-summary(rstan::summary(fit.3$fit)$summary[,"n_eff"]) ## Standard ESS
-summary(apply(brms:::as.array.brmsfit(fit.3), MARGIN = 3, FUN = rstan::ess_bulk)) ## Bulk (Rank-Normalised) ESS
-summary(apply(brms:::as.array.brmsfit(fit.3), MARGIN = 3, FUN = rstan::ess_tail)) ## Tail (Rank-Normalised) ESS
+summary(rstan::summary(fit.3$fit)$summary[,"n_eff"]) 
+summary(apply(brms:::as.array.brmsfit(fit.3), MARGIN = 3, FUN = rstan::ess_bulk)) 
+summary(apply(brms:::as.array.brmsfit(fit.3), MARGIN = 3, FUN = rstan::ess_tail))
+
+
+summary(rstan::summary(fit.4$fit)$summary[,"n_eff"]) 
+summary(apply(brms:::as.array.brmsfit(fit.4), MARGIN = 3, FUN = rstan::ess_bulk)) 
+summary(apply(brms:::as.array.brmsfit(fit.4), MARGIN = 3, FUN = rstan::ess_tail))
 
 
 
@@ -1059,6 +1279,7 @@ summary(apply(brms:::as.array.brmsfit(fit.3), MARGIN = 3, FUN = rstan::ess_tail)
 table(rstan::summary(fit.1$fit)$summary[,"Rhat"] < 1.01)
 table(rstan::summary(fit.2$fit)$summary[,"Rhat"] < 1.01)
 table(rstan::summary(fit.3$fit)$summary[,"Rhat"] < 1.01)
+table(rstan::summary(fit.4$fit)$summary[,"Rhat"] < 1.01)
 
 
 
@@ -1069,7 +1290,7 @@ table(rstan::summary(fit.3$fit)$summary[,"Rhat"] < 1.01)
 rstan::check_hmc_diagnostics(fit.1$fit) 
 rstan::check_hmc_diagnostics(fit.2$fit) 
 rstan::check_hmc_diagnostics(fit.3$fit) 
-
+rstan::check_hmc_diagnostics(fit.4$fit) 
 
 
 

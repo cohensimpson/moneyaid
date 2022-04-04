@@ -568,6 +568,10 @@ all_village_dyads$family_ij <- ifelse(all_village_dyads$family_ij == 1, "Salient
 all_village_dyads$family_ij <- as.factor(all_village_dyads$family_ij)
 all_village_dyads$family_ij <- relevel(all_village_dyads$family_ij , ref = "Unrelated")
 
+all_village_dyads$lender_ji <- ifelse(all_village_dyads$lender_ji == 1, "Yes", "No")
+all_village_dyads$lender_ji <- as.factor(all_village_dyads$lender_ji)
+all_village_dyads$lender_ji <- relevel(all_village_dyads$lender_ji , ref = "No")
+
 all_village_dyads$goodsgame_ij <- ifelse(all_village_dyads$goodsgame_ij == 1, "Preferred Money Handler", "Not Preferred Money Handler")
 all_village_dyads$goodsgame_ij <- as.factor(all_village_dyads$goodsgame_ij)
 all_village_dyads$goodsgame_ij <- relevel(all_village_dyads$goodsgame_ij , ref = "Not Preferred Money Handler")
