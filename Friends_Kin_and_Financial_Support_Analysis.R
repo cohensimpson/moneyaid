@@ -1295,3 +1295,15 @@ rstan::check_hmc_diagnostics(fit.4$fit)
 
 
 
+
+######## Total Model Run Time (In Hours)
+sum(colSums(rstan::get_elapsed_time(fit.1$fit)))/(60^2)
+sum(colSums(rstan::get_elapsed_time(fit.2$fit)))/(60^2)
+sum(colSums(rstan::get_elapsed_time(fit.3$fit)))/(60^2)
+sum(colSums(rstan::get_elapsed_time(fit.4$fit)))/(60^2)
+
+
+
+
+
+
