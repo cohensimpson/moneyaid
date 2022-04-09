@@ -475,6 +475,7 @@ brms:::print.brmsfit(fit.4, digits = 4, prob = 0.95, priors = TRUE, robust = FAL
 # View(rstan::summary(fit.4$fit)$summary) ## Results for *all* estimated parameters
 
 # View(village_networks_coresidence$`11` * village_networks_geodist$`11`)
+# View(village_networks_coresidence$`55` * village_networks_geodist$`55`)
 
 
 
@@ -707,75 +708,75 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
                                
 )  + labs(title = NULL,
           y = NULL,
-          x = expression(Posterior~Mean~Log~Odds~Ratio~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender][" (i = Ego, j = Alter, k = Village)"]~plain("+ 95% Quantile Interval [QI] + 68% Inner QI")), # https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/plotmath.html
-          
+          x = expression(Posterior~Mean~Log~Odds~Ratio~of~italic(Y)[ijk]~" = "~1~" = "~Money~Lender~" (i = Ego, j = Alter, k = Village)"~plain("+ 95% Quantile Interval [QI] with 68% Inner QI")), # https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/plotmath.html
+          tag = "a",
           ## This sections uses the paste0 funciton to combine various bits of information about the random intercepts together to create the big caption at the bottom of Figure 1.
           caption = paste0("\n", # http://paul-buerkner.github.io/brms/reference/VarCorr.brmsfit.html
                            "SD of Varying Intercepts for Village (Levels = 16) - ",
                            "Model 1 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 2 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 3 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 4 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$village$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "\n",
                            "SD of Varying Intercepts for Village:Ego (Levels = 3,184) - ",
                            "Model 1 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 2 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 3 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 4 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$i_ID$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            
                            "\n",
                            "SD of Varying Intercepts for Village:Alter (Levels = 3,184) - ",
                            "Model 1 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.1, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 2 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.2, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 3 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.3, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
-                           "])",
+                           ")",
                            
                            "; Model 4 (",
-                           "Estimate = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
+                           "Est. = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
-                           "])"
+                           ")"
 
 
           )
@@ -787,14 +788,18 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
                                         panel.background = element_rect(fill = "transparent"), # bg of the panel
                                         panel.grid.major.y = element_blank(),
                                         panel.grid.minor.y = element_blank(),
-                                        panel.grid.major.x = element_line(size = 0.35, linetype = 1),
+                                        panel.grid.major.x = element_line(size = 0.15, linetype = 1, colour = "#E2E2E2"),
                                         panel.grid.minor.x = element_blank(),
                                         panel.border = element_blank(),
-                                        axis.text = element_text(size = 10),
+                                        axis.text = element_text(size = 12, colour = "#767676"),
                                         axis.text.y = element_text(hjust = 1),
-                                        axis.title = element_text(size = 10),
+                                        axis.title = element_text(size = 12, colour = "#767676"),
+                                        plot.title = element_text(size = 12, colour = "#767676"),
+                                        plot.caption = element_text(size = 11, colour = "#767676"),
                                         legend.position = "right",
-                                        legend.title = element_blank()
+                                        legend.title = element_blank(),
+                                        legend.text = element_text(size = 10, colour = "#767676"),
+                                        plot.tag = element_text(size = 14, vjust = -4, face = "bold", colour = "#767676")
 ) + scale_x_continuous(limits = c(-2.5, 3.5), breaks = c(-2, -1, 0, 1, 2, 3))
  
 
@@ -870,13 +875,15 @@ condeff_plot_object <- (condeff_plot_object + theme(axis.line = element_line(col
                                                     panel.grid.major = element_blank(),
                                                     panel.grid.minor = element_blank(),
                                                     panel.border = element_blank(),
-                                                    panel.spacing.x = unit(0.25, "cm"),
-                                                    axis.text = element_text(size = 10),
-                                                    axis.title = element_text(size = 10),
+                                                    panel.spacing.x = unit(0, "cm"),
+                                                    axis.text = element_text(size = 13, colour = "#767676"),
+                                                    axis.title = element_text(size = 13, colour = "#767676"),
                                                     legend.position = "bottom",
-                                                    legend.title = element_blank()
+                                                    legend.title = element_blank(),
+                                                    legend.text = element_text(size = 13, colour = "#767676"),
+                                                    strip.text = element_text(size = 13, colour = "#767676")
 ) 
-+ labs(title = NULL, x = NULL, y = expression(Predicted~Probability~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender]))
++ labs(title = NULL, x = NULL, y = expression(Predicted~Probability~of~italic(Y)[ijk]~" = "~1~" = "~Money~Lender))
 + scale_y_continuous(limits = c(0, 0.175), breaks = seq(0, 0.175, 0.025))
 + scale_color_manual(values = c("#4393C3", "#B2182B"))
 + guides(fill = "none") # https://statisticsglobe.com/remove-legend-ggplot2-r
@@ -907,7 +914,7 @@ elpd_diffs <- data.frame(
 )
 
 elpd_diff_plot <- (ggplot(elpd_diffs, aes(x = Index, y = diff12)) 
-                   + geom_point(aes(colour = factor(village)), size = 1, alpha = 0.8) 
+                   + geom_point(aes(colour = factor(village)), size = 1.25, alpha = 0.7) 
                    + scale_color_manual(values = c("7"  = "#2166AC",
                                                    "9"  = "#4393C3",
                                                    "11" = "#FFEE99",
@@ -939,8 +946,8 @@ elpd_diff_plot <- (ggplot(elpd_diffs, aes(x = Index, y = diff12))
                            panel.grid.major = element_blank(),
                            panel.grid.minor = element_blank(),
                            panel.border = element_blank(),
-                           axis.text = element_text(size = 10),
-                           axis.title = element_text(size = 10),
+                           axis.text = element_text(size = 13, colour = "#767676"),
+                           axis.title = element_text(size = 13, colour = "#767676"),
                            legend.position = "none"
                    )
 ) + labs(title = NULL,
@@ -958,7 +965,7 @@ elpd_diff_plot <- (ggplot(elpd_diffs, aes(x = Index, y = diff12))
 
 #################################### FIGURE 2c: CONDITIONAL EFFECTS FOR MODEL 4 ####################################
 typical_dyad.2 <- rbind.data.frame(  
-  "Ego Money Lender for Alter" = cbind.data.frame(lender_ji = "Yes",
+  "Money Lender for Alter" = cbind.data.frame(lender_ji = "Yes",
                                               log_distance_ij_Z = 0,  ## Note the standardization/use of Z scores!
                                               goodsgame_ij = "Not Preferred Money Handler",
                                               problemsolver_ij = "Not Preferred Problem Solver",
@@ -993,7 +1000,7 @@ typical_dyad.2 <- rbind.data.frame(
                                               
   ),
   
-  "Ego Not a Money Lender for Alter" = cbind.data.frame(lender_ji = "No",
+  "Not a Money Lender for Alter" = cbind.data.frame(lender_ji = "No",
                                                     log_distance_ij_Z = 0,  ## Note the standardization/use of Z scores!
                                                     goodsgame_ij = "Not Preferred Money Handler",
                                                     problemsolver_ij = "Not Preferred Problem Solver",
@@ -1055,13 +1062,15 @@ condeff_plot_object.2 <- (condeff_plot_object.2 + theme(axis.line = element_line
                                                         panel.grid.major = element_blank(),
                                                         panel.grid.minor = element_blank(),
                                                         panel.border = element_blank(),
-                                                        panel.spacing.x = unit(0.25, "cm"),
-                                                        axis.text = element_text(size = 10),
-                                                        axis.title = element_text(size = 10),
+                                                        panel.spacing.x = unit(0, "cm"),
+                                                        axis.text = element_text(size = 13, colour = "#767676"),
+                                                        axis.title = element_text(size = 13, colour = "#767676"),
                                                         legend.position = "bottom",
-                                                        legend.title = element_blank()
+                                                        legend.title = element_blank(),
+                                                        legend.text = element_text(size = 13, colour = "#767676"),
+                                                        strip.text = element_text(size = 13, colour = "#767676")
 ) 
-+ labs(title = NULL, x = NULL, y = expression(Predicted~Probability~of~italic(Y)[ijk][" = "][1][" = "][Money~Lender]))
++ labs(title = NULL, x = NULL, y = expression(Predicted~Probability~of~italic(Y)[ijk]~" = "~1~" = "~Money~Lender))
 + scale_y_continuous(limits = c(0, 0.25), breaks = seq(0, 0.25, 0.025))
 + scale_color_manual(values = c("#4393C3", "#B2182B"))
 + guides(fill = "none") # https://statisticsglobe.com/remove-legend-ggplot2-r
@@ -1083,11 +1092,12 @@ condeff_plot_object.2 <- (condeff_plot_object.2 + theme(axis.line = element_line
 condeff_plot_object_and_elpd_diff_plot <- plot_grid(condeff_plot_object, elpd_diff_plot, condeff_plot_object.2,
                                                     labels = c("a", "b", "c"), 
                                                     ncol = 3,
-                                                    label_size = 13,
+                                                    label_size = 18,
                                                     # label_fontfamily = "sans",
+                                                    label_colour = "#767676",
                                                     label_fontface = "bold",
                                                     vjust = 1,
-                                                    rel_widths = c(0.65, 1.30, 1.10), 
+                                                    rel_widths = c(0.75, 1.30, 1.25), 
                                                     rel_heights = c(0.75, 1, 0.75)
 )
 
@@ -1095,8 +1105,8 @@ condeff_plot_object_and_elpd_diff_plot <- plot_grid(condeff_plot_object, elpd_di
 
 # plot(coefficient.plot)
 ggsave(plot = condeff_plot_object_and_elpd_diff_plot, 
-       filename = "F2_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
-       scale = 3.5, width = 5, height = 1.5, units = "in", bg = "transparent")
+       filename = "F2_Friends_Kin_FinancialSupport.png", device = "png", dpi = 600,
+       scale = 3.5, width = 5, height = 2, units = "in", bg = "transparent")
 
 
 
@@ -1216,17 +1226,21 @@ fit.1.and.fit.2.and.fit.3.and.fit.4.pp.stat.custom <- (ggplot(fit.1.and.fit.2.an
                                                                panel.border = element_blank(),
                                                                legend.position = "none",
                                                                legend.title = element_blank(),
-                                                               axis.text.y = element_blank(), #element_text(size = 10),
-                                                               text = element_text(size = 8.25),
-                                                               plot.title = element_text(size = 8.25),
-                                                               strip.text = element_blank()
+                                                               axis.text = element_text(size = 10, colour = "#767676"),
+                                                               axis.text.y = element_blank(), # element_text(size = 10),
+                                                               axis.title = element_text(size = 10, colour = "#767676"),
+                                                               plot.title = element_text(size = 10, hjust = 0.5, colour = "#767676"),
+                                                               plot.subtitle = element_text(size = 10, hjust = 0.5, colour = "#767676"),
+                                                               strip.text = element_blank(),
+                                                               plot.tag = element_text(size = 14, vjust = -4, face = "bold", colour = "#767676")
                                                        ) 
                                                        + scale_color_manual(values = c("#EE7733", "#009988", "#CC3311", "#33BBEE"))
                                                        + scale_x_continuous(limits = c(0.0088, 0.0100), breaks = seq(0.0088, 0.0100, 0.0002))
                                                        + labs(y = NULL,
-                                                              x = expression(bar(italic(Y))[Synthetic]~"(Based on 500 Posterior Draws per Model [Rug Plot]; Bandwidth = 0.00003)"),
-                                                              title = expression("Posterior Predictive Check:"~Unconditional~Probability~of~italic(Y)[ijk][" = "][1]),
-                                                              subtitle = expression(bar(italic(Y))[Observed]~"(Dashed Line)"~vs.~"Gaussian Kernel Density Plots of"~bar(italic(Y))[Synthetic]~"Under Models 1, 2, 3, and 4") # https://stackoverflow.com/a/43010647
+                                                              x = expression(bar(italic(Y))[Synthetic]~"(500 Posterior Draws per Model [Rug Plot]; Bandwidth = 0.00003)"),
+                                                              tag = "b",
+                                                              title = expression("Posterior Predictive Check:"~Unconditional~Probability~of~italic(Y)[ijk]~" = "~1),
+                                                              subtitle = expression(bar(italic(Y))[Observed]~"(Dashed Line)"~vs.~"Gaussian Kernel Density Plots of"~bar(italic(Y))[Synthetic]) # https://stackoverflow.com/a/43010647
                                                        )
 ) 
 
@@ -1236,15 +1250,15 @@ fit.1.and.fit.2.and.fit.3.and.fit.4.pp.stat.custom <- (ggplot(fit.1.and.fit.2.an
 # https://stackoverflow.com/a/52841737
 coefficient.plot.with.inset <- (ggdraw() 
                                 + draw_plot(coefficient.plot) 
-                                + draw_plot(fit.1.and.fit.2.and.fit.3.and.fit.4.pp.stat.custom, x = 0.625, y = .115, width = .355, height = .275)
+                                + draw_plot(fit.1.and.fit.2.and.fit.3.and.fit.4.pp.stat.custom, x = 0.645, y = .135, width = .355, height = .295)
 )
 
 
 
 # plot(coefficient.plot)
 ggsave(plot = coefficient.plot.with.inset, 
-       filename = "F1_Friends_Kin_FinancialSupport_Inset.png", device = "png", dpi = 1200,
-       scale = 3, width = 4.75, height = 4.40, units = "in", bg = "transparent")
+       filename = "F1_Friends_Kin_FinancialSupport_Inset.png", device = "png", dpi = 600,
+       scale = 3, width = 4.75, height = 4.65, units = "in", bg = "transparent")
 
 
 
