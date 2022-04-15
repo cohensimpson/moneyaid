@@ -7,7 +7,12 @@ Access to money is vital to day-to-day human survival. But who do we turn to for
 <br>
 <br>
 
-![](https://github.com/cohensimpson/moneyaid/blob/main/F1_Friends_Kin_FinancialSupport_Inset.png "Fig. 1a. Bayesian multilevel dyadic regression models of choosing a within-village resident as a money lender (N = 680,378 ordered dyads). *Fig. 1b.* (inset) Model-specific posterior predictive checks (i.e., y_Observed vs. y_Synthetic).") 
+![](https://github.com/cohensimpson/moneyaid/blob/main/F1_Friends_Kin_FinancialSupport_Inset.png) 
+
+<br>
+<br> 
+
+_(*Panel a.*) Bayesian multilevel dyadic regression models of choosing a within-village resident as a money lender (N = 680,378 ordered dyads). (*Panel b.*) (inset) Model-specific posterior predictive checks (i.e., y_Observed vs. y_Synthetic)._
 
 <br>
 <br> 
@@ -17,7 +22,7 @@ Access to money is vital to day-to-day human survival. But who do we turn to for
 <br>
 <br> 
 
-_(Panel a. & c.) Predicted probability (Model 1 (see Figure 1); 1000 posterior draws; 95% quantile intervals) of ego (i) naming a within-village alter (j) as a money lender when alter is a stranger, a Best Friend, Salient Kin, or a Best Friend who is Salient Kin for the global typical dyad. (Panel b.) Predictive performance of Model 1 (Full Model w/ Interactions) vs. Model 2 (Controls Only) using leave-one-out cross-validation (LOO-CV) and pareto-smoothed importance sampling (PSIS). Hover over image for full caption._
+_(*Panel a. & c.*) Predicted probability (Model 1 (see Figure 1); 1000 posterior draws; 95% quantile intervals) of ego (i) naming a within-village alter (j) as a money lender when alter is a stranger, a Best Friend, Salient Kin, or a Best Friend who is Salient Kin for the global typical dyad. (*Panel b.*) Predictive performance of Model 1 (Full Model w/ Interactions) vs. Model 2 (Controls Only) using leave-one-out cross-validation (LOO-CV) and pareto-smoothed importance sampling (PSIS). Hover over image for full caption._
 
 
 
