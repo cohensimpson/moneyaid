@@ -10,7 +10,7 @@ Access to money is vital to day-to-day human survival. But who do we turn to for
 ![](https://github.com/cohensimpson/moneyaid/blob/main/F1_Friends_Kin_FinancialSupport_Inset.png) 
 <br> 
 
-_**Figure 1.** (**Panel a.**) Bayesian multilevel dyadic regression models of choosing a within-village resident as a money lender (N = 680,378 ordered dyads). (**Panel b.**) (inset) Model-specific posterior predictive checks (i.e., y_Observed vs. y_Synthetic). Note, Figure 1 appears properly on GitHub in "light mode"/with a white background due to the overlay of the second plot (i.e., Panel b.) within the first (i.e., Panel a.)._
+_**Figure 1.** (**Panel a.**) Bayesian multilevel dyadic regression models of choosing a within-village resident as a money lender (N = 680,378 ordered dyads). (**Panel b.**) (inset) Model-specific posterior predictive checks (i.e., y_Observed vs. y_Synthetic). Note, Figure 1 appears properly on GitHub in "light mode"/with a white background due to the overlay of the non-transparent second plot (i.e., Panel b.) within the first (i.e., Panel a.)._
 
 <br>
 <br> 
