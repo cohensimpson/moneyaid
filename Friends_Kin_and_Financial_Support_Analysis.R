@@ -12,7 +12,7 @@ library(brms)
 # # install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))  # https://mc-stan.org/cmdstanr/
 # library(cmdstanr)
 # # install_cmdstan()
-# set_cmdstan_path(path = "/Users/cohen/.cmdstanr/cmdstan-2.28.2")
+# set_cmdstan_path(path = "/Users/cohen/.cmdstanr/cmdstan-2.29.2")
 
 library(ggplot2)
 library(jtools)
