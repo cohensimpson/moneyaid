@@ -210,7 +210,7 @@ villages <- subset(villages, villages$village_ID %in% village_IDs) ## Retain att
 
 villages$pg_market_any <- ifelse((villages$pg_market + villages$pg_market_crops) > 0, 1, 0)
 
-villages <- villages[c("village_ID", "census_pop", "census_employ", "census_noAgri", "census_poverty", "pg_savingsgroup", "pg_market_any", "distArua")] ## Retain only the village attributes that we need
+villages <- villages[c("village_ID", "census_pop", "census_employ", "census_noAgri", "pg_savingsgroup", "pg_market_any", "distArua")] ## Retain only the village attributes that we need
 
 
 
@@ -653,7 +653,7 @@ all_village_dyads$age_j_Z <- scale(all_village_dyads$age_j, center = TRUE, scale
 
 all_village_dyads$age_j_squared <- all_village_dyads$age_j^2 # https://stats.stackexchange.com/questions/264146/standardizing-quadratic-variables-in-linear-model
 all_village_dyads$age_j_squared_Z <- scale(all_village_dyads$age_j_squared, center = TRUE, scale = TRUE)
-
+ 
 
 
 ## Prepare village-level variables for regression models
@@ -662,7 +662,6 @@ all_village_dyads$age_j_squared_Z <- scale(all_village_dyads$age_j_squared, cent
 all_village_dyads$village_population_size <- villages$census_pop[match(all_village_dyads$village, villages$village_ID)] # adult population
 all_village_dyads$village_census_employ <- villages$census_employ[match(all_village_dyads$village, villages$village_ID)] # employment rate
 all_village_dyads$village_census_noAgri <- villages$census_noAgri[match(all_village_dyads$village, villages$village_ID)] # percent employed in non-agriculture
-all_village_dyads$village_census_poverty <- villages$census_poverty[match(all_village_dyads$village, villages$village_ID)] # poverty index
 
 all_village_dyads$village_pg_savingsgroup <- villages$pg_savingsgroup[match(all_village_dyads$village, villages$village_ID)] # number of savings/community savings groups in village
 all_village_dyads$village_pg_market_any <- villages$pg_market_any[match(all_village_dyads$village, villages$village_ID)] # 1 if a general market AND/OR a marketplace for crops located within village, 0 otherwise
@@ -676,8 +675,6 @@ all_village_dyads$village_population_size_log_Z <- scale(all_village_dyads$villa
 all_village_dyads$village_census_employ_Z <- scale(all_village_dyads$village_census_employ, center = TRUE, scale = TRUE)
 
 all_village_dyads$village_census_noAgri_Z <- scale(all_village_dyads$village_census_noAgri, center = TRUE, scale = TRUE)
-
-all_village_dyads$village_census_poverty_Z <- scale(all_village_dyads$village_census_poverty, center = TRUE, scale = TRUE)
 
 all_village_dyads$village_pg_market_any <- ifelse(all_village_dyads$village_pg_market_any == 1, "General or Farmers Market", "No Market")
 all_village_dyads$village_pg_market_any <- as.factor(all_village_dyads$village_pg_market_any)
@@ -729,7 +726,6 @@ table(all_village_dyads$village_pg_market_any) ## Village Market (General or Far
 summary(all_village_dyads$village_population_size) ## Village Population Size
 summary(all_village_dyads$village_census_employ) ## Village Employment Rate
 summary(all_village_dyads$village_census_noAgri) ## Village % Employed in Non-Agricultural Work
-summary(all_village_dyads$village_census_poverty) ## Village Poverty Rate
 summary(all_village_dyads$village_pg_savingsgroup) ## Number of Village Savings Groups
 summary(all_village_dyads$village_distArua) ## Village Distance to Arua
 

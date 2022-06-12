@@ -44,7 +44,7 @@ save.image("Friends_Kin_and_Financial_Support_DataPrep.RData")
 
 
 ## Next, keep ONLY what is needed to fit the Bayesian multilevel models.
-rm(list = setdiff(ls(), list("all_village_dyads"))) 
+# rm(list = setdiff(ls(), list("all_village_dyads"))) 
 
 
 ## Last, use garbage collector to clear memory
@@ -60,7 +60,7 @@ brms.cores <- 2
 brms.chains <- 4
 cmdstanr.threads <- 5
 
-brms.iter <- 5000 ## How many iterations per chain?
+brms.iter <- 6000 ## How many iterations per chain?
 brms.warmup <- 1000 ## How many warm-up iterations per chain?
 
 cmdstanr.grainsize <- nrow(all_village_dyads)/120  # Default: max(100, nrow(all_village_dyads) / (2 * cmdstanr.threads))
@@ -91,35 +91,17 @@ cmdstanr.grainsize <- nrow(all_village_dyads)/120  # Default: max(100, nrow(all_
 # and recommend reducing the possible range of the randomly-selected initial values (i.e., [-2, +2]) or simply choosing specific initial values
 # problematic parameters. See also: https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/ 
 
-# Accordingly, for all models, I use the following value as the initial value for the standard deviation of the random/varying intercepts.
-# Note that there are three grouping factors — i.e., Egos/I_ID, Alters_J_ID, and Village. For consistency, I use the same starting value for each.
-
-# init_func <- function(chain_id = 1){ # https://stackoverflow.com/a/70349499
-#   list("sd_1" =  0.0001,
-#        "sd_2" =  0.0001,
-#        "sd_3" =  0.0001
-#   )
-# }
-# 
-# init_list <- list(
-#   init_func(chain_id = 1),
-#   init_func(chain_id = 2),
-#   init_func(chain_id = 3),
-#   init_func(chain_id = 4)
-# )
-
-
-# Here I follow the **truly-excellent** tutorial on setting initial values by Solomon Kurtz: https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/ 
-# In it, it use code similar to what appears here to randomly select starting values to one's specific specifications. This is key as initial values across chains
-# are ideally not identical. And Solomon's little method allows one to still maintain reproducibility.
+# Accordingly, I follow the **truly excellent** tutorial on setting initial values by Solomon Kurtz: https://solomonkurz.netlify.app/post/2021-06-05-don-t-forget-your-inits/ 
+# In it, he uses code similar to what appears here to randomly select starting values in a manner that is quite flexible. This is key as initial values across chains
+# are ideally not identical, where Solomon's code snippet allows one to maintain reproducibility.
 set_inits <- function(chain_id = chain, seed = chosen_seed, ...) { ## Function to randomly-select initial values for the standard deviation of the random intercepts
   
   set.seed(seed)
   
   list(
-    "sd_1" = runif(n = 1, min = 0, max = 0.0002), # Standard deviation must be non-negative, and, following reccomendations to deal with the warning above, its possible initial values should be rather restricted.
-    "sd_2" = runif(n = 1, min = 0, max = 0.0002),
-    "sd_3" = runif(n = 1, min = 0, max = 0.0002)
+    "sd_1" = runif(n = 1, min = 0, max = 0.00015), # Standard deviation must be non-negative, and, following recommendations to deal with the warning above, its possible initial values should be rather restricted.
+    "sd_2" = runif(n = 1, min = 0, max = 0.00015),
+    "sd_3" = runif(n = 1, min = 0, max = 0.00015)
   )
   
 }
@@ -188,7 +170,6 @@ fit.1 <- brm(formula = brmsformula(formula = lender_ij
                                    + village_population_size_log_Z
                                    + village_census_employ_Z
                                    + village_census_noAgri_Z
-                                   + village_census_poverty_Z
                                    + village_pg_savingsgroup
                                    + village_pg_market_any
                                    + village_distArua_log_Z
@@ -205,9 +186,10 @@ fit.1 <- brm(formula = brmsformula(formula = lender_ij
 , data = all_village_dyads
 , iter = brms.iter, warmup = brms.warmup, thin = 1
 , cores = brms.cores, chains = brms.chains
-, inits = init_list
+, init = init_list
 , backend = "cmdstanr"
 , threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
+, control = list(adapt_delta = 0.9)
 , seed = 20200127
 , silent = 0
 , save_pars = save_pars(all = TRUE)
@@ -272,7 +254,6 @@ fit.2 <- brm(formula = brmsformula(formula = lender_ij
                                    + village_population_size_log_Z
                                    + village_census_employ_Z
                                    + village_census_noAgri_Z
-                                   + village_census_poverty_Z
                                    + village_pg_savingsgroup
                                    + village_pg_market_any
                                    + village_distArua_log_Z
@@ -289,9 +270,10 @@ fit.2 <- brm(formula = brmsformula(formula = lender_ij
 , data = all_village_dyads
 , iter = brms.iter, warmup = brms.warmup, thin = 1
 , cores = brms.cores, chains = brms.chains
-, inits = init_list
+, init = init_list
 , backend = "cmdstanr"
 , threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
+, control = list(adapt_delta = 0.9)
 , seed = 20200127
 , silent = 0
 , save_pars = save_pars(all = TRUE)
@@ -356,7 +338,6 @@ fit.3 <- brm(formula = brmsformula(formula = lender_ij
                                    + village_population_size_log_Z
                                    + village_census_employ_Z
                                    + village_census_noAgri_Z
-                                   + village_census_poverty_Z
                                    + village_pg_savingsgroup
                                    + village_pg_market_any
                                    + village_distArua_log_Z
@@ -373,9 +354,10 @@ fit.3 <- brm(formula = brmsformula(formula = lender_ij
 , data = all_village_dyads
 , iter = brms.iter, warmup = brms.warmup, thin = 1
 , cores = brms.cores, chains = brms.chains
-, inits = init_list
+, init = init_list
 , backend = "cmdstanr"
 , threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
+, control = list(adapt_delta = 0.9)
 , seed = 20200127
 , silent = 0
 , save_pars = save_pars(all = TRUE)
@@ -440,7 +422,6 @@ fit.4 <- brm(formula = brmsformula(formula = lender_ij
                                    + village_population_size_log_Z
                                    + village_census_employ_Z
                                    + village_census_noAgri_Z
-                                   + village_census_poverty_Z
                                    + village_pg_savingsgroup
                                    + village_pg_market_any
                                    + village_distArua_log_Z
@@ -457,9 +438,10 @@ fit.4 <- brm(formula = brmsformula(formula = lender_ij
 , data = all_village_dyads
 , iter = brms.iter, warmup = brms.warmup, thin = 1
 , cores = brms.cores, chains = brms.chains
-, inits = init_list
+, init = init_list
 , backend = "cmdstanr"
 , threads = threading(threads = cmdstanr.threads, grainsize = 5670, static = TRUE) # https://cran.r-project.org/web/packages/brms/vignettes/brms_threading.html
+, control = list(adapt_delta = 0.9)
 , seed = 20200127
 , silent = 0
 , save_pars = save_pars(all = TRUE)
@@ -474,8 +456,6 @@ closeAllConnections()
 brms:::print.brmsfit(fit.4, digits = 4, prob = 0.95, priors = TRUE, robust = FALSE, mc_se = TRUE)
 # View(rstan::summary(fit.4$fit)$summary) ## Results for *all* estimated parameters
 
-# View(village_networks_coresidence$`11` * village_networks_geodist$`11`)
-# View(village_networks_coresidence$`55` * village_networks_geodist$`55`)
 
 
 
@@ -495,7 +475,7 @@ brms:::print.brmsfit(fit.4, digits = 4, prob = 0.95, priors = TRUE, robust = FAL
 # https://paul-buerkner.github.io/brms/reference/loo.brmsfit.html
 
 
-## Next, clear the environment of all objects save those that are required to run fit the brms models and then clear working memory.
+## Next, clear the environment of all objects save those that are required to fit the brms models and then clear working memory with garbage collector.
 rm(list = setdiff(ls(), list("all_village_dyads", "brms.cores", "brms.chains", "cmdstanr.threads", "brms.iter", "brms.warmup", "cmdstanr.grainsize", "set_inits", "init_list"))) 
 gc()
 
@@ -693,7 +673,6 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
                                           "Village Population Size (Log)" = "village_population_size_log_Z",
                                           "Village Employement Rate" = "village_census_employ_Z",
                                           "Village %Employed in Non-Agricultural Work" = "village_census_noAgri_Z",
-                                          "Village Poverty Rate" = "village_census_poverty_Z",
                                           "Village Savings Groups" = "village_pg_savingsgroup",
                                           "Village Market: General or Farmers (Ref: No Market)" = "village_pg_market_anyGeneralorFarmersMarket",
                                           "Village Distance to Arua (Market City)" = "village_distArua_log_Z"
@@ -805,7 +784,7 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
 
 # plot(coefficient.plot)
 # ggsave(plot = coefficient.plot, 
-#        filename = "F1_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
+#        filename = "F1_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
 #        scale = 3, width = 4.75, height = 4, units = "in", bg = "transparent")
 
 
@@ -840,7 +819,6 @@ typical_dyad <- cbind.data.frame(lender_ji = "No",
                                  village_population_size_log_Z = 0,
                                  village_census_employ_Z = 0,
                                  village_census_noAgri_Z = 0,
-                                 village_census_poverty_Z = 0,
                                  village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
                                  village_pg_market_any = "No Market",
                                  village_distArua_log_Z = 0
@@ -892,7 +870,7 @@ condeff_plot_object <- (condeff_plot_object + theme(axis.line = element_line(col
 
 # plot(condeff_plot_object)
 # ggsave(plot = condeff_plot_object, 
-#        filename = "F2b_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
+#        filename = "F2b_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
 #        scale = 2.75, width = 2.25, height = 2.25, units = "in", bg = "transparent")
 
 
@@ -957,7 +935,7 @@ elpd_diff_plot <- (ggplot(elpd_diffs, aes(x = Index, y = diff12))
 
 # plot(elpd_diff_plot)
 # ggsave(plot = elpd_diff_plot, 
-#        filename = "F2c_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
+#        filename = "F2c_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
 #        scale = 2.75, width = 2.25, height = 2, units = "in", bg = "transparent")
 
 
@@ -993,7 +971,6 @@ typical_dyad.2 <- rbind.data.frame(
                                               village_population_size_log_Z = 0,
                                               village_census_employ_Z = 0,
                                               village_census_noAgri_Z = 0,
-                                              village_census_poverty_Z = 0,
                                               village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
                                               village_pg_market_any = "No Market",
                                               village_distArua_log_Z = 0
@@ -1028,7 +1005,6 @@ typical_dyad.2 <- rbind.data.frame(
                                                     village_population_size_log_Z = 0,
                                                     village_census_employ_Z = 0,
                                                     village_census_noAgri_Z = 0,
-                                                    village_census_poverty_Z = 0,
                                                     village_pg_savingsgroup = mean(fit.1$data$village_pg_savingsgroup),
                                                     village_pg_market_any = "No Market",
                                                     village_distArua_log_Z = 0
@@ -1079,7 +1055,7 @@ condeff_plot_object.2 <- (condeff_plot_object.2 + theme(axis.line = element_line
 
 # plot(condeff_plot_object.2)
 # ggsave(plot = condeff_plot_object.2, 
-#        filename = "F2b_Friends_Kin_FinancialSupport.png", device = "png", dpi = 1200,
+#        filename = "F2b_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
 #        scale = 2.75, width = 2.25, height = 2.25, units = "in", bg = "transparent")
 
 
@@ -1105,7 +1081,7 @@ condeff_plot_object_and_elpd_diff_plot <- plot_grid(condeff_plot_object, elpd_di
 
 # plot(coefficient.plot)
 ggsave(plot = condeff_plot_object_and_elpd_diff_plot, 
-       filename = "F2_Friends_Kin_FinancialSupport.png", device = "png", dpi = 600,
+       filename = "F2_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 600,
        scale = 3.5, width = 5, height = 2, units = "in", bg = "transparent")
 
 
@@ -1257,7 +1233,7 @@ coefficient.plot.with.inset <- (ggdraw()
 
 # plot(coefficient.plot)
 ggsave(plot = coefficient.plot.with.inset, 
-       filename = "F1_Friends_Kin_FinancialSupport_Inset.png", device = "png", dpi = 600,
+       filename = "F1_Friends_Kin_FinancialSupport_Inset.svg", device = "svg", dpi = 600,
        scale = 3, width = 4.75, height = 4.65, units = "in", bg = "transparent")
 
 
