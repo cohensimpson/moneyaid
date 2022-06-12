@@ -784,7 +784,7 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
 
 # plot(coefficient.plot)
 # ggsave(plot = coefficient.plot, 
-#        filename = "F1_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
+#        filename = "F1_Friends_Kin_FinancialSupport.png", device = "png", dpi = 900,
 #        scale = 3, width = 4.75, height = 4, units = "in", bg = "transparent")
 
 
@@ -870,7 +870,7 @@ condeff_plot_object <- (condeff_plot_object + theme(axis.line = element_line(col
 
 # plot(condeff_plot_object)
 # ggsave(plot = condeff_plot_object, 
-#        filename = "F2b_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
+#        filename = "F2b_Friends_Kin_FinancialSupport.png", device = "png", dpi = 900,
 #        scale = 2.75, width = 2.25, height = 2.25, units = "in", bg = "transparent")
 
 
@@ -935,7 +935,7 @@ elpd_diff_plot <- (ggplot(elpd_diffs, aes(x = Index, y = diff12))
 
 # plot(elpd_diff_plot)
 # ggsave(plot = elpd_diff_plot, 
-#        filename = "F2c_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
+#        filename = "F2c_Friends_Kin_FinancialSupport.png", device = "png", dpi = 900,
 #        scale = 2.75, width = 2.25, height = 2, units = "in", bg = "transparent")
 
 
@@ -1055,7 +1055,7 @@ condeff_plot_object.2 <- (condeff_plot_object.2 + theme(axis.line = element_line
 
 # plot(condeff_plot_object.2)
 # ggsave(plot = condeff_plot_object.2, 
-#        filename = "F2b_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 1200,
+#        filename = "F2b_Friends_Kin_FinancialSupport.png", device = "png", dpi = 900,
 #        scale = 2.75, width = 2.25, height = 2.25, units = "in", bg = "transparent")
 
 
@@ -1081,7 +1081,7 @@ condeff_plot_object_and_elpd_diff_plot <- plot_grid(condeff_plot_object, elpd_di
 
 # plot(coefficient.plot)
 ggsave(plot = condeff_plot_object_and_elpd_diff_plot, 
-       filename = "F2_Friends_Kin_FinancialSupport.svg", device = "svg", dpi = 600,
+       filename = "F2_Friends_Kin_FinancialSupport.png", device = "png", dpi = 900,
        scale = 3.5, width = 5, height = 2, units = "in", bg = "transparent")
 
 
@@ -1233,7 +1233,7 @@ coefficient.plot.with.inset <- (ggdraw()
 
 # plot(coefficient.plot)
 ggsave(plot = coefficient.plot.with.inset, 
-       filename = "F1_Friends_Kin_FinancialSupport_Inset.svg", device = "svg", dpi = 600,
+       filename = "F1_Friends_Kin_FinancialSupport_Inset.png", device = "png", dpi = 900,
        scale = 3, width = 4.75, height = 4.65, units = "in", bg = "transparent")
 
 

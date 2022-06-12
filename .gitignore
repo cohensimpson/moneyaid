@@ -3,7 +3,8 @@
 *.RData
 *.docx
 *.png
-!F1_Friends_Kin_FinancialSupport_Inset.svg
-!F2_Friends_Kin_FinancialSupport.svg
+!F1_Friends_Kin_FinancialSupport_Inset.png
+!F2_Friends_Kin_FinancialSupport.png
+.svg
 .DS_Store
 *.pdf
