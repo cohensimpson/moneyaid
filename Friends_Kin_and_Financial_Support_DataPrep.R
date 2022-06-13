@@ -734,8 +734,9 @@ summary(all_village_dyads$village_distArua) ## Village Distance to Arua
 ## Village Response Rates
 villages$village_network_size <- unlist(lapply(X = village_networks_lending, FUN = function(x){dim(x)[1]}))[villages$village_ID]
 villages$village_percent_2014_population_surveyed <- villages$village_network_size/villages$census_pop
-summary(villages$village_percent_2014_population_surveyed
-        )
+summary(villages$village_percent_2014_population_surveyed)
+
+
 
 
 
