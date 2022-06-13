@@ -70,22 +70,22 @@ cmdstanr.grainsize <- nrow(all_village_dyads)/120  # Default: max(100, nrow(all_
 #################################### ESTIMATE BAYESIAN MODELS ####################################
 ########## A NOTE ON WARNINGS AT THE BEGGINING OF SAMPLING
 # At the very beginning of estimation, brms/Stan/cmdstanr would sometimes produces the following rather intimidating warning:
-      # Chain XX Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-      # Chain XX Exception: Exception: bernoulli_logit_glm_lpmf: Intercept[1] is inf, but must be finite! 
-      # Chain XX If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-      # Chain XX but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+# Chain XX Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+# Chain XX Exception: Exception: bernoulli_logit_glm_lpmf: Intercept[1] is inf, but must be finite! 
+# Chain XX If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+# Chain XX but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
 
 # As mentioned in my paper, this warning appears to stem from inclusion of the parameter for the standard deviation of the random/varying intercepts for the 16 villages.
 # Crucially, this warning is not concerning if it only occurs during the warmup phase and the diagnostics after estimation are good (i.e., there are no pathologies as indicated by 
 # full convergence, low autocorrelation etc.) This is discussed in threads on the official Stan help forum, sometimes with direct input by the Stan developers themselves. 
 # See in particular the threads:
-      # https://discourse.mc-stan.org/t/metropolis-proposal-rejected-because-location-parameter-is-infinite/6371
-      # https://discourse.mc-stan.org/t/manage-warnings-a-production-mode-for-warnings-and-errors-managing-for-the-end-user/1588
-      # https://discourse.mc-stan.org/t/variable-does-not-exist-error-for-user-defined-function-in-ode-rk45/18960/7
-      # https://discourse.mc-stan.org/t/metropolis-rejection-proposal-due-to-incorrect-numerical-values-for-derived-parameter/3654/4
-      # https://discourse.mc-stan.org/t/compilation-error-on-rstan/17972/14
-      # https://discourse.mc-stan.org/t/help-ensure-the-shape-parameter-is-positive-finite/26313/4
-      # https://discourse.mc-stan.org/t/model-with-many-correlated-varying-slopes-sampling-not-done/6189/6
+# https://discourse.mc-stan.org/t/metropolis-proposal-rejected-because-location-parameter-is-infinite/6371
+# https://discourse.mc-stan.org/t/manage-warnings-a-production-mode-for-warnings-and-errors-managing-for-the-end-user/1588
+# https://discourse.mc-stan.org/t/variable-does-not-exist-error-for-user-defined-function-in-ode-rk45/18960/7
+# https://discourse.mc-stan.org/t/metropolis-rejection-proposal-due-to-incorrect-numerical-values-for-derived-parameter/3654/4
+# https://discourse.mc-stan.org/t/compilation-error-on-rstan/17972/14
+# https://discourse.mc-stan.org/t/help-ensure-the-shape-parameter-is-positive-finite/26313/4
+# https://discourse.mc-stan.org/t/model-with-many-correlated-varying-slopes-sampling-not-done/6189/6
 
 # Regardless, some threads on the forum suggest that such a warning is likely the result of the starting/initial values values being too extreme
 # and recommend reducing the possible range of the randomly-selected initial values (i.e., [-2, +2]) or simply choosing specific initial values
@@ -166,7 +166,7 @@ fit.1 <- brm(formula = brmsformula(formula = lender_ij
                                    # https://stats.stackexchange.com/a/228814
                                    # https://www.muscardinus.be/2017/07/lme4-random-effects/ (see entry on "Implicit Nesting")
                                    + (1 | i_ID) + (1 | j_ID) + (1 | village) 
-
+                                   
                                    + village_population_size_log_Z
                                    + village_census_employ_Z
                                    + village_census_noAgri_Z
@@ -399,19 +399,19 @@ fit.4 <- brm(formula = brmsformula(formula = lender_ij
                                    + edu_full_i
                                    + edu_full_j
                                    + same_edu_full_ij
-
+                                   
                                    + income_i
-
+                                   
                                    + hasPhone_i
                                    + hasPhone_j
-
+                                   
                                    + HH_Head_i
                                    + HH_Head_j
-
+                                   
                                    + religion_i
                                    + religion_j
                                    + same_religion_ij
-
+                                   
                                    + leader_i
                                    + leader_j
                                    
@@ -612,71 +612,71 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
                                                       ", ",
                                                       sprintf("%.3f", quantile(fit.1$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
                                                       "]"
-                                                      ),
-                                               paste0("Controls (Model 2)\nBayes R^2 = ",
-                                                      sprintf("%.3f", mean(fit.2$criteria$bayes_R2)),
-                                                      "\n95% QI [", 
-                                                      sprintf("%.3f", quantile(fit.2$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
-                                                      ", ",
-                                                      sprintf("%.3f", quantile(fit.2$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
-                                                      "]"
-                                                      ),
-                                               paste0("Simple (Model 3)\nBayes R^2 = ",
-                                                      sprintf("%.3f", mean(fit.3$criteria$bayes_R2)),
-                                                      "\n95% QI [", 
-                                                      sprintf("%.3f", quantile(fit.3$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
-                                                      ", ",
-                                                      sprintf("%.3f", quantile(fit.3$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
-                                                      "]"
-                                               ),
-                                               paste0("Extended (Model 4)\nBayes R^2 = ",
-                                                      sprintf("%.3f", mean(fit.4$criteria$bayes_R2)),
-                                                      "\n95% QI [", 
-                                                      sprintf("%.3f", quantile(fit.4$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
-                                                      ", ",
-                                                      sprintf("%.3f", quantile(fit.4$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
-                                                      "]"
-                                               )
-                                               ),
+                               ),
+                               paste0("Controls (Model 2)\nBayes R^2 = ",
+                                      sprintf("%.3f", mean(fit.2$criteria$bayes_R2)),
+                                      "\n95% QI [", 
+                                      sprintf("%.3f", quantile(fit.2$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
+                                      ", ",
+                                      sprintf("%.3f", quantile(fit.2$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
+                                      "]"
+                               ),
+                               paste0("Simple (Model 3)\nBayes R^2 = ",
+                                      sprintf("%.3f", mean(fit.3$criteria$bayes_R2)),
+                                      "\n95% QI [", 
+                                      sprintf("%.3f", quantile(fit.3$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
+                                      ", ",
+                                      sprintf("%.3f", quantile(fit.3$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
+                                      "]"
+                               ),
+                               paste0("Extended (Model 4)\nBayes R^2 = ",
+                                      sprintf("%.3f", mean(fit.4$criteria$bayes_R2)),
+                                      "\n95% QI [", 
+                                      sprintf("%.3f", quantile(fit.4$criteria$bayes_R2, probs = c(0.025, 0.975)))[1],
+                                      ", ",
+                                      sprintf("%.3f", quantile(fit.4$criteria$bayes_R2, probs = c(0.025, 0.975)))[2],
+                                      "]"
+                               )
+                               ),
                                coefs = c( # "Intercept" = "(Intercept)", # Exclude as it skews the graph
-                                          "Best Friend of Ego" = "friend_ijBestFriend",
-                                          "Salient Kin" = "family_ijSalientKin",
-                                          "Best Friend of Ego x Salient Kin" = "friend_ijBestFriend:family_ijSalientKin",
-                                          "Money Lender for Alter" = "lender_jiYes",
-                                          "Best Friend of Ego x Money Lender for Alter" = "friend_ijBestFriend:lender_jiYes",
-                                          "Salient Kin x Money Lender for Alter" = "family_ijSalientKin:lender_jiYes",
-                                          "Best Friend of Ego x Salient Kin x Money Lender for Alter" = "friend_ijBestFriend:family_ijSalientKin:lender_jiYes",
-                                          "Geographic Distance Between Ego and Alter (Log)" = "log_distance_ij_Z",
-                                          "Alter Preferred Money Handler for Ego" = "goodsgame_ijPreferredMoneyHandler",
-                                          "Alter Preferred Problem Solver for Ego" = "problemsolver_ijPreferredProblemSolver",
-                                          "Gender (Ego): Female (Ref: Male)" = "gender_iFemale",
-                                          "Gender (Alter): Female (Ref: Male)" = "gender_jFemale",
-                                          "Same Gender (Ego & Alter)" = "same_gender_ijSameGender",
-                                          "Age (Ego)" = "age_i_Z",
-                                          "Age^2 (Ego)" = "age_i_squared_Z",
-                                          "Age (Alter)" = "age_j_Z",
-                                          "Age^2 (Alter)" = "age_j_squared_Z",
-                                          "Absolute Difference (Sqrt): Age (Ego) - Age (Alter)" = "age_absdiff_ij_sqrt_Z",
-                                          "Education Level (Ego)" = "edu_full_i",
-                                          "Education Level (Alter)" = "edu_full_j",
-                                          "Same Education Level (Ego & Alter)" = "same_edu_full_ijSameLevelofEducation",
-                                          "Perceived Relative Income (Ego)" = "income_i",
-                                          "Mobile Phone Owner (Ego): Yes (Ref: No)" = "hasPhone_iYes",
-                                          "Mobile Phone Owner (Alter): Yes (Ref: No)" = "hasPhone_jYes",
-                                          "Household Head (Ego): Yes (Ref: No)" = "HH_Head_iYes",
-                                          "Household Head (Alter): Yes (Ref: No)" = "HH_Head_jYes",
-                                          "Religion (Ego): Not Catholic (Ref: Catholic)" = "religion_iNotCatholic",
-                                          "Religion (Alter): Not Catholic (Ref: Catholic)" = "religion_jNotCatholic",
-                                          "Same Religion (Ego & Alter)" = "same_religion_ijSameReligion",
-                                          "Village Leader (Ego): Yes (Ref: No)" = "leader_iYes",
-                                          "Village Leader (Alter): Yes (Ref: No)" = "leader_jYes",
-                                          "Village Population Size (Log)" = "village_population_size_log_Z",
-                                          "Village Employement Rate" = "village_census_employ_Z",
-                                          "Village %Employed in Non-Agricultural Work" = "village_census_noAgri_Z",
-                                          "Village Savings Groups" = "village_pg_savingsgroup",
-                                          "Village Market: General or Farmers (Ref: No Market)" = "village_pg_market_anyGeneralorFarmersMarket",
-                                          "Village Distance to Arua (Market City)" = "village_distArua_log_Z"
-                                          
+                                 "Best Friend of Ego" = "friend_ijBestFriend",
+                                 "Salient Kin" = "family_ijSalientKin",
+                                 "Best Friend of Ego x Salient Kin" = "friend_ijBestFriend:family_ijSalientKin",
+                                 "Money Lender for Alter" = "lender_jiYes",
+                                 "Best Friend of Ego x Money Lender for Alter" = "friend_ijBestFriend:lender_jiYes",
+                                 "Salient Kin x Money Lender for Alter" = "family_ijSalientKin:lender_jiYes",
+                                 "Best Friend of Ego x Salient Kin x Money Lender for Alter" = "friend_ijBestFriend:family_ijSalientKin:lender_jiYes",
+                                 "Geographic Distance Between Ego and Alter (Log)" = "log_distance_ij_Z",
+                                 "Alter Preferred Money Handler for Ego" = "goodsgame_ijPreferredMoneyHandler",
+                                 "Alter Preferred Problem Solver for Ego" = "problemsolver_ijPreferredProblemSolver",
+                                 "Gender (Ego): Female (Ref: Male)" = "gender_iFemale",
+                                 "Gender (Alter): Female (Ref: Male)" = "gender_jFemale",
+                                 "Same Gender (Ego & Alter)" = "same_gender_ijSameGender",
+                                 "Age (Ego)" = "age_i_Z",
+                                 "Age^2 (Ego)" = "age_i_squared_Z",
+                                 "Age (Alter)" = "age_j_Z",
+                                 "Age^2 (Alter)" = "age_j_squared_Z",
+                                 "Absolute Difference (Sqrt): Age (Ego) - Age (Alter)" = "age_absdiff_ij_sqrt_Z",
+                                 "Education Level (Ego)" = "edu_full_i",
+                                 "Education Level (Alter)" = "edu_full_j",
+                                 "Same Education Level (Ego & Alter)" = "same_edu_full_ijSameLevelofEducation",
+                                 "Perceived Relative Income (Ego)" = "income_i",
+                                 "Mobile Phone Owner (Ego): Yes (Ref: No)" = "hasPhone_iYes",
+                                 "Mobile Phone Owner (Alter): Yes (Ref: No)" = "hasPhone_jYes",
+                                 "Household Head (Ego): Yes (Ref: No)" = "HH_Head_iYes",
+                                 "Household Head (Alter): Yes (Ref: No)" = "HH_Head_jYes",
+                                 "Religion (Ego): Not Catholic (Ref: Catholic)" = "religion_iNotCatholic",
+                                 "Religion (Alter): Not Catholic (Ref: Catholic)" = "religion_jNotCatholic",
+                                 "Same Religion (Ego & Alter)" = "same_religion_ijSameReligion",
+                                 "Village Leader (Ego): Yes (Ref: No)" = "leader_iYes",
+                                 "Village Leader (Alter): Yes (Ref: No)" = "leader_jYes",
+                                 "Village Population Size (Log)" = "village_population_size_log_Z",
+                                 "Village Employement Rate" = "village_census_employ_Z",
+                                 "Village %Employed in Non-Agricultural Work" = "village_census_noAgri_Z",
+                                 "Village Savings Groups" = "village_pg_savingsgroup",
+                                 "Village Market: General or Farmers (Ref: No Market)" = "village_pg_market_anyGeneralorFarmersMarket",
+                                 "Village Distance to Arua (Market City)" = "village_distArua_log_Z"
+                                 
                                ),
                                omit.coefs = NULL,
                                colors = c("#EE7733", "#009988", "#CC3311", "#33BBEE"),
@@ -756,8 +756,8 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
                            "Est. = ", sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Estimate"]),
                            "; S.E. = ",  sprintf("%.3f", VarCorr(x = fit.4, robust = FALSE, probs = c(0.025, 0.975))$j_ID$sd["Intercept", "Est.Error"]),
                            ")"
-
-
+                           
+                           
           )
 ) + theme_nice(style = "black") + theme(axis.line = element_line(color = "black"),
                                         legend.background = element_rect(fill = "transparent", colour = "transparent"), # get rid of legend bg
@@ -780,7 +780,7 @@ coefficient.plot <- plot_coefs(fit.1, fit.2, fit.3, fit.4,
                                         legend.text = element_text(size = 10, colour = "#767676"),
                                         plot.tag = element_text(size = 14, vjust = -4, face = "bold", colour = "#767676")
 ) + scale_x_continuous(limits = c(-2.5, 3.5), breaks = c(-2, -1, 0, 1, 2, 3))
- 
+
 
 # plot(coefficient.plot)
 # ggsave(plot = coefficient.plot, 

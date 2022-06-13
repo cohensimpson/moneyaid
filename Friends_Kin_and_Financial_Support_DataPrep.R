@@ -228,7 +228,7 @@ village_networks_coresidence <- list()
 
 
 for(v in village_IDs){  ## For each village with network data, construct the network of interest
-   
+  
   cat(paste0("\n", "Village ID: ", v, "\n"))
   
   villagers.data <- subset(survey_responses, survey_responses$village_ID == v)
@@ -453,7 +453,7 @@ for(v in village_IDs){ ## For each village with network data, construct the frie
   ## https://stackoverflow.com/questions/52316998/create-unique-id-for-dyads-non-directional
   all_villager_pairs$ij_ID_unordered <- paste0(pmin(all_villager_pairs$i_ID, all_villager_pairs$j_ID), "_", pmax(all_villager_pairs$i_ID, all_villager_pairs$j_ID))
   
-         
+  
   all_villager_pairs$village <- v
   
   
@@ -527,7 +527,7 @@ for(v in village_IDs){ ## For each village with network data, construct the frie
   all_villager_pairs$leader_i <- villagers_data$leader[match(all_villager_pairs$i_ID, villagers_data$ID)] 
   all_villager_pairs$HH_Head_i <- villagers_data$HH_Head[match(all_villager_pairs$i_ID, villagers_data$ID)] 
   all_villager_pairs$religion_i <- villagers_data$religion[match(all_villager_pairs$i_ID, villagers_data$ID)]
-
+  
   all_villager_pairs$gender_j <- villagers_data$gender[match(all_villager_pairs$j_ID, villagers_data$ID)] 
   all_villager_pairs$age_j <- villagers_data$age[match(all_villager_pairs$j_ID, villagers_data$ID)]
   all_villager_pairs$edu_full_j <- villagers_data$edu_full[match(all_villager_pairs$j_ID, villagers_data$ID)]
@@ -536,7 +536,7 @@ for(v in village_IDs){ ## For each village with network data, construct the frie
   all_villager_pairs$leader_j <- villagers_data$leader[match(all_villager_pairs$j_ID, villagers_data$ID)]
   all_villager_pairs$HH_Head_j <- villagers_data$HH_Head[match(all_villager_pairs$j_ID, villagers_data$ID)] 
   all_villager_pairs$religion_j <- villagers_data$religion[match(all_villager_pairs$j_ID, villagers_data$ID)] 
-
+  
   village_dyads[[v]] <- all_villager_pairs
   
 }
@@ -653,7 +653,7 @@ all_village_dyads$age_j_Z <- scale(all_village_dyads$age_j, center = TRUE, scale
 
 all_village_dyads$age_j_squared <- all_village_dyads$age_j^2 # https://stats.stackexchange.com/questions/264146/standardizing-quadratic-variables-in-linear-model
 all_village_dyads$age_j_squared_Z <- scale(all_village_dyads$age_j_squared, center = TRUE, scale = TRUE)
- 
+
 
 
 ## Prepare village-level variables for regression models
